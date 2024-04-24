@@ -1,3 +1,3 @@
-# Data-Driven-Control
+# Data-Driven Control
 
 Use Jupyter Notebooks for code development.
