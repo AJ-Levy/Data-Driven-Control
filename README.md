@@ -1,4 +1,4 @@
-To Run: in MATLAB terminal type controlScript
+To Run: In MATLAB terminal type 'controlScript'
 
 Notes:
   * Takes a moment to initialise everything.
