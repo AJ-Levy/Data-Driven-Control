@@ -1,3 +1,3 @@
 % run simulation
-open_system('penddemo');
-sim('penddemo');
+open_system('pendSim2');
+sim('pendSim2');
