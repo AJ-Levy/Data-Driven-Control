@@ -1,3 +1,7 @@
-# Data-Driven Control
+To Run: In MATLAB terminal type 'controlScript'
 
-Use Jupyter Notebooks for code development.
+Notes:
+  * Takes a moment to initialise everything.
+  * Initial angle of pendulum is set and working.
+  * Click on pendulum simulation block to modify params. 
+  * Must restart MATLAB if changes to python code are made. 
