@@ -9,8 +9,11 @@ class QLearningAgent:
         self.alpha = 0.4
         # discount factor
         self.gamma = 0.99
-        # epsilon-greedy threshold
-        self.epsilon = 0.2
+        # epsilon-greedy
+        self.epsilon = 1.0
+        self.min_epsilon = 0.05
+        self.epsilon_decay_val = 0.995
+        self.episode_threshold = 100
         # defining q-table
         self.qtable = np.load(self.qfile)
         # last state and action
@@ -63,15 +66,25 @@ class QLearningAgent:
         return box
             
 
-    def select_action(self, state):
+    def select_action(self, state, num_episodes):
         '''
         Selects next action using epsilon greedy strategy,
-        returning the index of the action i.e. 0 or 1
+        returning the index of the action i.e. 0 or 1.
         '''
+        if self.epsilon > self.min_epsilon and num_episodes > self.episode_threshold:
+            self.decay_epsilon(num_episodes)
+
         if np.random.rand() < self.epsilon:
             return np.random.choice(self.num_actions)
         else:
             return np.argmax(self.qtable[state, :]) 
+        
+    def decay_epsilon(self, num_episodes):
+        '''
+        Epsilon decay is employed after some number of episodes
+        to allow both exploration and optimisation.
+        '''
+        self.epsilon = np.power(self.epsilon_decay_val, num_episodes - self.episode_threshold)
 
     
     def update(self, state, action, reward, next_state):
@@ -84,7 +97,7 @@ class QLearningAgent:
         # save updated qtable
         np.save(self.qfile, self.qtable)
 
-    def get_force(self, theta, theta_dot, x, x_dot):
+    def get_force(self, theta, theta_dot, x, x_dot, num_episodes):
         '''
         Applies QLearning algorithm to select an action
         and then apply a force to the cart
@@ -93,7 +106,7 @@ class QLearningAgent:
         if self.last_state is not None:
             reward = self.reward_function(state)
             self.update(self.last_state, self.last_action, reward, state)
-        action = self.select_action(state)
+        action = self.select_action(state, num_episodes)
         self.last_state = state
         self.last_action = action
         force = self.forces[action] 
@@ -109,7 +122,7 @@ class QLearningAgent:
 # QLearning agent
 agent = QLearningAgent()     
 
-def controller_call(rad_big, theta_dot, x, x_dot):
+def controller_call(rad_big, theta_dot, x, x_dot, num_episodes):
     '''
     Method that MATLAB calls for QLearning
     '''
@@ -118,5 +131,5 @@ def controller_call(rad_big, theta_dot, x, x_dot):
     theta = (rad_big%(np.sign(rad_big)*2*np.pi))
     if theta >= np.pi:
         theta -= 2 * np.pi
-    force = agent.get_force(theta, theta_dot, x, x_dot)
+    force = agent.get_force(theta, theta_dot, x, x_dot, num_episodes)
     return force

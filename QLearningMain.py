@@ -29,7 +29,7 @@ def train(eng, model, num_episodes=1000, count=0):
     '''
     reset()
     for episode in range(1,num_episodes+1):
-        #eng.set_param(f'{model}/episode_num', 'Value', str(episode), nargout=0)
+        eng.set_param(f'{model}/numEpisodes', 'Value', str(episode), nargout=0)
         eng.sim(model)
         if episode % (num_episodes//10) == 0:
             count += 1 
@@ -47,13 +47,13 @@ def main(trainingModel = 'pendSimQTraining',
     # Run sim
     print("Setting up engine...")
     eng = matlab.engine.start_matlab()
-    eng.load_system(trainingModel)
+    eng.load_system(trainingModel, nargout=0)
     ## Comment Out Once Model is Trained ##
     #print("Training model...")
     #train(eng, trainingModel)
     #######################################
     print("Running simulation...")
-    eng.load_system(controllerModel)
+    eng.load_system(controllerModel, nargout=0)
     eng.sim(controllerModel)
     print("Final QTable")
     viewTable()

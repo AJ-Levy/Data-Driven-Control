@@ -19,7 +19,7 @@ class QLearningController:
         self.fail_state = -1
         # time keeping
         self.time = 0
-        self.dt = 0.005
+        self.dt = 0.001
 
     def get_state(self, x, x_dot, theta, theta_dot):
         '''
