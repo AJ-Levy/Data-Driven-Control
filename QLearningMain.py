@@ -23,24 +23,20 @@ def reset(num_states=162, num_actions=2, qtable_file='qtable.npy'):
     qtable = np.zeros((num_states, num_actions))
     np.save(qtable_file, qtable)
 
-def train(eng, num_episodes=1000, count=0):
+def train(eng, model, num_episodes=1000, count=0):
     '''
     Train QLearning Agent
     '''
     reset()
     for episode in range(1,num_episodes+1):
-        eng.sim('pendSimQTraining.slx')
+        #eng.set_param(f'{model}/episode_num', 'Value', str(episode), nargout=0)
+        eng.sim(model)
         if episode % (num_episodes//10) == 0:
-            count += 1
+            count += 1 
             print(f"{count*10}%")
 
-        # Remove old data (will improve efficiency later)
-        if os.path.exists("angleQ.pkl"):
-            os.remove("angleQ.pkl")
-        if os.path.exists("timeQ.pkl"):
-            os.remove("timeQ.pkl")
-
-def main():
+def main(trainingModel = 'pendSimQTraining', 
+         controllerModel = 'pendSimQController'):
 
     # Remove old data
     if os.path.exists("angleQ.pkl"):
@@ -51,12 +47,14 @@ def main():
     # Run sim
     print("Setting up engine...")
     eng = matlab.engine.start_matlab()
+    eng.load_system(trainingModel)
     ## Comment Out Once Model is Trained ##
-    print("Training model...")
-    train(eng)
+    #print("Training model...")
+    #train(eng, trainingModel)
     #######################################
     print("Running simulation...")
-    eng.sim('pendSimQController.slx')
+    eng.load_system(controllerModel)
+    eng.sim(controllerModel)
     print("Final QTable")
     viewTable()
     print("Simulation complete")
@@ -83,7 +81,7 @@ def main():
     plt.plot(time, angles)
     plt.xlabel("Time (s)")
     plt.ylabel("Theta (rad)")
-    plt.ylim(-0.1,0.1)
+    plt.ylim(-0.5,0.5)
     plt.title("Angle of pendulum over time")
     plt.show()
 
