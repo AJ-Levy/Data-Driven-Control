@@ -93,6 +93,7 @@ class QLearningAgent:
         # save updated qtable
         if num_episodes == self.total_episodes:
             np.save(self.qfile, self.qtable)
+
         # collect convergence data
         if self.current_episode == num_episodes:
             self.cum_reward += reward
@@ -121,8 +122,8 @@ class QLearningAgent:
     # simple for now
     def reward_function(self, state):
         if state == self.fail_state:
-            return -1.0
-        return 0.0
+            return 0.0
+        return 1.0
         
 # QLearning agent
 agent = QLearningAgent()     

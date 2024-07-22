@@ -3,3 +3,4 @@ slprj/
 *.txt
 *.npy
 *.autosave
+*.pkl
