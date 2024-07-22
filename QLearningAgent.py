@@ -21,7 +21,7 @@ class QLearningAgent:
         self.last_state = None
         self.last_action = None
         # forces to be applied to cart
-        self.forces = [1.0, -1.0]
+        self.forces = [3.0, -3.0]
         # state parameters
         self.fail_state = -1
         self.num_actions = num_actions
