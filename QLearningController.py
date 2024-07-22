@@ -12,7 +12,7 @@ class QLearningController:
         self.last_state = None
         self.last_action = None
         # forces to be applied to cart
-        self.forces = [5.0, -5.0]
+        self.forces = [3.0, -3.0]
         # state parameters
         self.num_actions = num_actions
         self.num_states = 18 # 0 - 17
