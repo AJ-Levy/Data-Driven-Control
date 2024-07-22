@@ -12,16 +12,16 @@ class QLearningController:
         self.last_state = None
         self.last_action = None
         # forces to be applied to cart
-        self.forces = [3.0, -3.0]
+        self.forces = [5.0, -5.0]
         # state parameters
         self.num_actions = num_actions
-        self.num_states = 162 # 0 - 161
+        self.num_states = 18 # 0 - 17
         self.fail_state = -1
         # time keeping
         self.time = 0
-        self.dt = 0.001
+        self.dt = 0.005
 
-    def get_state(self, x, x_dot, theta, theta_dot):
+    def get_state(self, theta, theta_dot):
         '''
         Convert continous parameters into discrete states
         (source: https://pages.cs.wisc.edu/~finton/qcontroller.html)
@@ -31,33 +31,23 @@ class QLearningController:
         box = 0
 
         # Failure state
-        if x < -2.4 or x > 2.4 or theta < -12 or theta > 12:
+        if theta < -12 or theta > 12:
             return self.fail_state
         
-        # positions
-        if x < -0.8: box = 0
-        elif x > 0.8: box = 1
-        else: box = 2
-
-        # velocities
-        if (x_dot < -0.5): pass
-        elif (x_dot < 0.5): box += 3
-        else: box += 6
-
         # angles
-        if (theta < -6): pass
-        elif (theta < -1): box += 9
-        elif (theta < 0): box += 18
-        elif (theta < 1): box += 27
-        elif (theta < 6): box += 36
-        else: box += 45
+        if (theta < -6): box = 0
+        elif (theta < -1): box = 1
+        elif (theta < 0): box = 2
+        elif (theta < 1): box = 3
+        elif (theta < 6): box = 4
+        else: box = 5
 
         # angular velocities
         if (theta_dot < -50): pass
-        elif (theta_dot < 50):  box += 54
-        else: box += 108
+        elif (theta_dot < 50):  box += 6
+        else: box += 12
 
-        return box     
+        return box
 
     def select_action(self, state):
         '''
@@ -66,12 +56,12 @@ class QLearningController:
         '''
         return np.argmax(self.qtable[state, :]) 
 
-    def get_force(self, theta, theta_dot, x, x_dot):
+    def get_force(self, theta, theta_dot):
         '''
         Applies QLearning algorithm to select an action
         and then apply a force to the cart
         '''
-        state = self.get_state(x, x_dot, theta, theta_dot)
+        state = self.get_state(theta, theta_dot)
         action = self.select_action(state)
         self.last_state = state
         self.last_action = action
@@ -92,7 +82,7 @@ class QLearningController:
 # QLearning controller
 controller = QLearningController()     
 
-def controller_call(rad_big, theta_dot, x, x_dot):
+def controller_call(rad_big, theta_dot):
     '''
     Method that MATLAB calls for QLearning
     '''
@@ -101,5 +91,5 @@ def controller_call(rad_big, theta_dot, x, x_dot):
     theta = (rad_big%(np.sign(rad_big)*2*np.pi))
     if theta >= np.pi:
         theta -= 2 * np.pi
-    force = controller.get_force(theta, theta_dot, x, x_dot)
+    force = controller.get_force(theta, theta_dot)
     return force
