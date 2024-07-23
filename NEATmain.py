@@ -3,14 +3,15 @@ import neat
 import pickle
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 
-def fitness(data):
+def fitness(angle_list):
     '''
-    Fitness is determined by the average 
-    diplacement from the desired rest point.
+    Fitness is determined by the average squared
+    diplacement from the verticle.
     '''
-    average = np.mean(np.abs(data))
-    fitness = np.pi/2 - average
+    average = np.mean(np.power(angle_list, 2))
+    fitness = (np.pi/2)**2 - average
     print("fitness score:", fitness)
     return fitness
 
@@ -20,8 +21,10 @@ def eval_genomes(genomes, config):
     NEAT eval_genomes method to run the sim 
     and evaluate the fitness of each genome.
     '''
-    if os.path.exists("dataNEAT.pkl"):
-        os.remove("dataNEAT.pkl")
+    if os.path.exists("angleNEAT.pkl"):
+        os.remove("angleNEAT.pkl")
+    if os.path.exists("angle_vNEAT.pkl"):
+        os.remove("angle_vNEAT.pkl")
 
     for genome_id, genome in genomes:
         
@@ -35,17 +38,18 @@ def eval_genomes(genomes, config):
         eng.sim('pendSimNEAT.slx')
 
         # Recieve angle data
-        data = []
-        with open('dataNEAT.pkl', 'rb') as f:
-            try:
-                while True:
-                    data.append(pickle.load(f))
-            except EOFError:
-                pass
-        os.remove("dataNEAT.pkl")
-    
+        with open('angleNEAT.pkl', 'rb') as f:
+            angle = pickle.load(f)
+        os.remove('angleNEAT.pkl')
+        with open('angle_vNEAT.pkl', 'rb') as f:
+            angle_v = pickle.load(f)
+        os.remove('angle_vNEAT.pkl')
+        # print(angle)
+        # plt.plot(angle)
+        # plt.show()
+        #inputa = input("readY)")
         # Return fitness
-        genome.fitness = fitness(data)
+        genome.fitness = fitness(angle)
 
 
 def run(config_file):
@@ -59,10 +63,13 @@ def run(config_file):
                                 config_file)
     
     # Create the population and add stats reporter.
-    p = neat.Population(config)
-    p.add_reporter(neat.StdOutReporter(True))
+    pop = neat.Population(config)
+    pop.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
-    p.add_reporter(stats)
+    pop.add_reporter(stats)
+
+    # Parallel Evaluator
+    #pe = neat.ParallelEvaluator(3, eval_genomes)
 
     # Set up MATLAB engine
     print("Setting up engine...")
@@ -70,7 +77,7 @@ def run(config_file):
     eng = matlab.engine.start_matlab()
 
     # Run NEAT and return best Genome
-    p.run(eval_genomes, 40)
+    pop.run(eval_genomes, 25)
     return stats.best_genome()
 
 
