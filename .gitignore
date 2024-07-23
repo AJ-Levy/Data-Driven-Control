@@ -1,0 +1,7 @@
+__pycache__/
+slprj/
+*.txt
+*.npy
+*.autosave
+*.pkl
+*.png
