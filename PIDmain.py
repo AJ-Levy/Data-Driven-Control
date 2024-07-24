@@ -1,72 +1,54 @@
 import matlab.engine
-import pickle
 import matplotlib.pyplot as plt
-import os
 import numpy as np
-
-def genIntialAngle(delta=0.2):
-    '''
-    Generates a random intial angle about 0 radians.
-    The angles lies in the range [-delta, delta) radians.
-    '''
-    return np.random.uniform(-delta, delta)
 
 def main(model = 'pendSimPID',
          mask = 'Pendulum and Cart',
-         stabilisation_precision = 0.05):
-
-    # Remove old data
-    if os.path.exists("anglePID.pkl"):
-        os.remove("anglePID.pkl")
-    if os.path.exists("timePID.pkl"):
-        os.remove("timePID.pkl")
-    
-    # Run sim
+         stabilisation_precision = 0.05,
+         delta = 0.2):
+    '''
+    Main method to set up MATLAB, simulink,
+    and handle data aquisition/plotting.
+    '''
     print("Setting up engine...")
     eng = matlab.engine.start_matlab()
     eng.load_system(model, nargout=0)
-    # set random intial angle
-    intial_angle = genIntialAngle()
+    
+    # Set random intial angle
+    intial_angle = np.random.uniform(-delta, delta)
     while intial_angle <= stabilisation_precision and intial_angle >= -stabilisation_precision:
-        intial_angle = genIntialAngle()
+        intial_angle = np.random.uniform(-delta, delta)
     eng.set_param(f'{model}/{mask}', 'init', str(intial_angle), nargout=0)
+
     print("Running simulation...")
-    eng.sim(model)
+    eng.eval("out = sim('pendSimPID.slx');", nargout=0)
     print("Simulation complete")
 
-    # Load angles
-    angles = []
-    with open('anglePID.pkl', 'rb') as f:
-        try:
-            while True:
-                angles.append(pickle.load(f))
-        except EOFError:
-            pass
-        
-    # Load time
-    time = []
-    with open('timePID.pkl', 'rb') as f:
-        try:
-            while True:
-                time.append(pickle.load(f))
-        except EOFError:
-            pass
+    # Get angles
+    angle_2d = eng.eval("out.angle")
+    angle_lst = []
+    for angle in angle_2d:
+        angle_lst.append(angle[0])
+
+    # Get time
+    time_2d = eng.eval("out.time")
+    time_lst = []
+    for time in time_2d:
+        time_lst.append(time[0])
 
     # Plot data
-    plt.plot(time, angles, label = 'Output Signal')
+    plt.plot(time_lst, angle_lst, label = 'Output Signal')
     plt.axhline(y=stabilisation_precision, color='k', linestyle='--', label=f'{stabilisation_precision} rad')
     plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'-{stabilisation_precision} rad')
     plt.xlabel("Time (s)")
     plt.ylabel("Theta (rad)")
     plt.title("Angle of pendulum over time")
-    plt.xlim(0,max(time))
+    plt.xlim(0,max(time_lst))
     plt.ylim(-0.5,0.5)
     plt.legend()
     plt.show()
 
+    eng.quit()
+
 if __name__ == '__main__':
     main()
-
-# # Should work but doesnt
-# answer = eng.workspace['out.angle']
-# print(answer)
