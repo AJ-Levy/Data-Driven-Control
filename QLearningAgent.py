@@ -28,6 +28,7 @@ class QLearningAgent:
         self.num_states = 18 # 0 - 17
         # track convergence by cumulative reward
         self.cum_reward = 0
+        self.cum_rewards = []
         self.current_episode = 1
         self.total_episodes = 1000
 
@@ -90,18 +91,22 @@ class QLearningAgent:
         q_new = reward + self.gamma * np.max(self.qtable[next_state])
         self.qtable[state, action] = q_old + self.alpha * (q_new - q_old)
         
-        # save updated qtable
-        if num_episodes == self.total_episodes:
-            np.save(self.qfile, self.qtable)
-
         # collect convergence data
         if self.current_episode == num_episodes:
             self.cum_reward += reward
         else:
-            with open(self.convergence_file, 'a') as f:
-                f.write(f"{self.current_episode}#{self.cum_reward}\n")
+            self.cum_rewards.append(self.cum_reward)
             self.cum_reward = reward
             self.current_episode += 1
+
+        # save updated qtable and convergence data
+        if num_episodes == self.total_episodes:
+            np.save(self.qfile, self.qtable)
+            
+            with open(self.convergence_file, "w") as f:
+                for i, reward in enumerate(self.cum_rewards):
+                    f.write(f'{i}#{reward}\n')
+
 
     def get_force(self, theta, theta_dot, num_episodes):
         '''
@@ -110,7 +115,7 @@ class QLearningAgent:
         '''
         state = self.get_state(theta, theta_dot)
         if self.last_state is not None:
-            reward = self.reward_function(state)
+            reward = self.reward_function(theta, theta_dot, self.last_action)
             self.update(self.last_state, self.last_action, reward, state, num_episodes)
         action = self.select_action(state, num_episodes)
         self.last_state = state
@@ -119,11 +124,16 @@ class QLearningAgent:
 
         return force
         
-    # simple for now
-    def reward_function(self, state):
+    def reward_function(self, theta, theta_dot, last_action):
+        '''
         if state == self.fail_state:
             return 0.0
         return 1.0
+
+        (source: https://github.com/openai/gym/blob/master/gym/envs/classic_control/pendulum.py)
+        '''
+        return -(theta**2 + 0.1 * theta_dot**2 + 0.001 * self.forces[last_action]**2)
+        
         
 # QLearning agent
 agent = QLearningAgent()     

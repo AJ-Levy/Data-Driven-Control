@@ -24,10 +24,14 @@ def reset(num_states=18, num_actions=2, qtable_file='qtable.npy'):
     qtable = np.zeros((num_states, num_actions))
     np.save(qtable_file, qtable)
 
-def train(eng, model, mask, num_episodes=1000, count=0):
+def train(eng, model, mask, convergence_data_file, num_episodes=1000, count=0):
     '''
     Train QLearning Agent
     '''
+    # clean up algorithm convergence file
+    if os.path.exists(convergence_data_file):
+        os.remove(convergence_data_file)
+
     reset()
     for episode in range(1,num_episodes+1):
         intial_angle = genIntialAngle()
@@ -47,7 +51,8 @@ def genIntialAngle(delta=0.2):
     '''
     return np.random.uniform(-delta, delta)
 
-def main(trainingModel = 'pendSimQTraining', 
+def main(trainModel = True, 
+         trainingModel = 'pendSimQTraining', 
          controllerModel = 'pendSimQController',
          cartPoleSubsystem = 'Pendulum and Cart',
          angle_data_file = 'angleQ.pkl',
@@ -57,13 +62,11 @@ def main(trainingModel = 'pendSimQTraining',
 
     global time
 
-    # Remove old data
+    # clean up old data
     if os.path.exists(angle_data_file):
         os.remove(angle_data_file)
     if os.path.exists(time_data_file):
         os.remove(time_data_file)
-    if os.path.exists(convergence_data_file):
-        os.remove(convergence_data_file)
     
     # Run sim
     print("Setting up engine...")
@@ -71,8 +74,9 @@ def main(trainingModel = 'pendSimQTraining',
     eng.load_system(trainingModel, nargout=0)
     start_time = time.time()
     ## Comment Out Once Model is Trained ##
-    print("Training model...")
-    train(eng, trainingModel, cartPoleSubsystem)
+    if trainModel:
+        print("Training model...")
+        train(eng, trainingModel, cartPoleSubsystem, convergence_data_file)
     #######################################
     print("Running simulation...")
     eng.load_system(controllerModel, nargout=0)
@@ -108,8 +112,8 @@ def main(trainingModel = 'pendSimQTraining',
 
     # Plot data
     plt.plot(times, angles, label = "Output Signal")
-    plt.axhline(y=0.05, color='k', linestyle='--', label='0.05 rad')
-    plt.axhline(y=-0.05, color='k', linestyle='--', label='-0.05 rad')
+    plt.axhline(y=stabilisation_precision, color='k', linestyle='--', label=f'{stabilisation_precision} rad')
+    plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'-{stabilisation_precision} rad')
     plt.xlabel("Time (s)")
     plt.ylabel("Theta (rad)")
     plt.xlim(0,max(times))
@@ -137,4 +141,4 @@ def main(trainingModel = 'pendSimQTraining',
     eng.quit()
 
 if __name__ == '__main__':
-    main()
+    main(trainModel=True)
