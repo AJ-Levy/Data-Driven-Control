@@ -21,7 +21,7 @@ def main(model = 'pendSimPID',
     eng.set_param(f'{model}/{mask}', 'init', str(intial_angle), nargout=0)
 
     print("Running simulation...")
-    eng.eval("out = sim('pendSimPID.slx');", nargout=0)
+    eng.eval(f"out = sim('{model}');", nargout=0)
     print("Simulation complete")
 
     # Get angles
