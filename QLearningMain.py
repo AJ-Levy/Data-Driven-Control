@@ -1,5 +1,4 @@
 import matlab.engine
-import pickle
 import matplotlib.pyplot as plt
 import os
 import numpy as np
@@ -55,19 +54,11 @@ def main(trainModel = True,
          trainingModel = 'pendSimQTraining', 
          controllerModel = 'pendSimQController',
          cartPoleSubsystem = 'Pendulum and Cart',
-         angle_data_file = 'angleQ.pkl',
-         time_data_file = 'timeQ.pkl',
          convergence_data_file = 'qconverge.txt',
          stabilisation_precision = 0.05):
 
     global time
 
-    # clean up old data
-    if os.path.exists(angle_data_file):
-        os.remove(angle_data_file)
-    if os.path.exists(time_data_file):
-        os.remove(time_data_file)
-    
     # Run sim
     print("Setting up engine...")
     eng = matlab.engine.start_matlab()
@@ -85,38 +76,32 @@ def main(trainModel = True,
         intial_angle = genIntialAngle()
     # pass in random intial angular offset
     eng.set_param(f'{controllerModel}/{cartPoleSubsystem}', 'init', str(intial_angle), nargout=0)
-    eng.sim(controllerModel)
+    eng.eval(f"out = sim('{controllerModel}');", nargout=0)
     print("Final QTable")
     viewTable()
     duration = time.time() - start_time
     print(f"Simulation complete in {duration:.1f} secs")
 
-    # Data Presentation
-    # Load angles
-    angles = []
-    with open(angle_data_file, 'rb') as f:
-        try:
-            while True:
-                angles.append(pickle.load(f))
-        except EOFError:
-            pass
-        
-    # Load time
-    times = []
-    with open(time_data_file, 'rb') as f:
-        try:
-            while True:
-                times.append(pickle.load(f))
-        except EOFError:
-            pass
+    ## Data Presentation
+    # Get angles
+    angle_2d = eng.eval("out.angle")
+    angle_lst = []
+    for angle in angle_2d:
+        angle_lst.append(angle[0])
+
+    # Get time
+    time_2d = eng.eval("out.time")
+    time_lst = []
+    for time in time_2d:
+        time_lst.append(time[0])
 
     # Plot data
-    plt.plot(times, angles, label = "Output Signal")
+    plt.plot(time_lst, angle_lst, label = "Output Signal")
     plt.axhline(y=stabilisation_precision, color='k', linestyle='--', label=f'{stabilisation_precision} rad')
     plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'-{stabilisation_precision} rad')
     plt.xlabel("Time (s)")
     plt.ylabel("Theta (rad)")
-    plt.xlim(0,max(times))
+    plt.xlim(0,max(time_lst))
     plt.ylim(-0.5,0.5)
     plt.title("Angle of pendulum over time")
     plt.legend()
@@ -141,4 +126,4 @@ def main(trainModel = True,
     eng.quit()
 
 if __name__ == '__main__':
-    main(trainModel=True)
+    main(trainModel=False)

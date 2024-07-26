@@ -70,13 +70,6 @@ class QLearningController:
         # time progresses
         self.time += self.dt
 
-        # Write data to files
-        with open('angleQ.pkl', 'ab') as f:
-            pickle.dump(theta, f)
-
-        with open('timeQ.pkl', 'ab') as f:
-            pickle.dump(self.time, f) 
-
         return force
         
 # QLearning controller
