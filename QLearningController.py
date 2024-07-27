@@ -1,5 +1,4 @@
 import numpy as np
-import pickle
 
 class QLearningController:
 
@@ -17,9 +16,6 @@ class QLearningController:
         self.num_actions = num_actions
         self.num_states = 18 # 0 - 17
         self.fail_state = -1
-        # time keeping
-        self.time = 0
-        self.dt = 0.005
 
     def get_state(self, theta, theta_dot):
         '''
@@ -66,9 +62,6 @@ class QLearningController:
         self.last_state = state
         self.last_action = action
         force = self.forces[action]
-
-        # time progresses
-        self.time += self.dt
 
         return force
         
