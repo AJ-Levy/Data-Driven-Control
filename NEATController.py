@@ -1,60 +1,48 @@
 import pickle
-import numpy as np
+import os
 import neat
 
-class storage:
-    def __init__(self, dt, end_time):
-        self.time = 0
-        self.angle = []
-        self.angle_v = []
-        self.net = None
-        self.dt = dt
-        self.end_time = end_time
-
-    def update(self, theta, theta_v):
-        self.time = round(self.time+self.dt, 3)
-        self.angle.append(theta)
-        self.angle_v.append(theta_v)
-
-    def get_net(self):
-        with open('network.pkl', 'rb') as f:
-            net_in = pickle.load(f)
-        self.net = net_in
-
-    def reset(self):
-        self.time = 0
-        self.angle = []
-        self.angle_v = []
+class NEATController:
+    '''
+    Class to store ANN and previous force.
+    '''
+    def __init__(self):
+        self.prev_force = 0
         self.net = None
 
-    def write_data(self):
-        with open('angleNEAT.pkl', 'wb') as f:
-            pickle.dump(self.angle, f)
-        with open('angle_vNEAT.pkl', 'wb') as f:
-            pickle.dump(self.angle_v, f)
+    def update_ANN(self, net):
+        '''
+        Updates ANN.
+        '''
+        self.net = net
+
+    def update_force(self, force):
+        '''
+        Updates previous force.
+        '''
+        self.prev_force = force
 
 
-controller = storage(dt = 0.005, end_time=8)
-    
-def controller_call(theta, theta_v):
+net_obj = NEATController()
+
+def controller_call(theta, theta_v, time):
     '''
     Method that MATLAB calls for NEAT.
-    '''
-    #controller.write_data()
-    # Reset sim and write data if out of bounds/time's up
-    if (theta > 1.4) or (theta < -1.4) or (controller.time >= controller.end_time):
-        controller.write_data()
-        controller.reset()
-        return 0
-    
-    # Get ANN
-    if controller.net == None:
-        controller.get_net()
+    '''    
+    # Get new ANN at the start of the simulation
+    # and reset previous force
+    if time == 0.0:
+        with open('network.pkl', 'rb') as f:
+            net_obj.update_ANN(pickle.load(f))
+        os.remove("network.pkl")
+        net_obj.update_force(0)
 
     # Return output force and update
-    force = 30*controller.net.activate([theta])[0]
-    controller.update(theta, theta_v)
+    inputs = [theta, theta_v, net_obj.prev_force]
+    force = 30*(net_obj.net.activate(inputs)[0])
+    net_obj.update_force(force/30)
     return force
+
 
 # def controller_call(theta, theta_v):
 #     '''
@@ -76,9 +64,10 @@ def controller_call(theta, theta_v):
 #     return force
 
 
-# def controller_call(theta, theta_v):
+# def controller_call(theta, theta_v, time):
 #     '''
 #     Uses the winner ANN.
+#     Run from MATLAB.
 #     '''
 #     with open('winnerANN.pkl', 'rb') as f:
 #         winner = pickle.load(f)
@@ -89,6 +78,7 @@ def controller_call(theta, theta_v):
 
 #     net = neat.nn.FeedForwardNetwork.create(winner, config)
 
-#     inputs = [theta]
+#     inputs = [theta, theta_v, net_obj.prev_force]
 #     force = 30*net.activate(inputs)[0]
+#     net_obj.update_force(force/30)
 #     return force
