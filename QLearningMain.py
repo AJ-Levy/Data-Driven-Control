@@ -119,11 +119,11 @@ def main(trainModel = True,
     plt.plot(episodes, rewards, color = 'r')
     plt.plot()
     plt.xlabel('Episodes')
-    plt.ylabel('Cumulative Reward')
+    plt.ylabel('Cumulative Reward per Time Step')
     plt.title('Convergence of Q-learning')
     plt.show()
 
     eng.quit()
 
 if __name__ == '__main__':
-    main(trainModel=False)
+    main(trainModel=True)

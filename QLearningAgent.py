@@ -6,15 +6,17 @@ class QLearningAgent:
         # files
         self.qfile = 'qtable.npy'
         self.convergence_file = 'qconverge.txt'
+        # number of episodes
+        self.total_episodes = 1000
         # learning rate
-        self.alpha = 0.4
+        self.alpha = 0.1
         # discount factor
         self.gamma = 0.99
         # epsilon-greedy
         self.epsilon = 1.0
         self.min_epsilon = 0.05
         self.epsilon_decay_val = 0.995
-        self.episode_threshold = 100
+        self.episode_threshold = self.total_episodes//10
         # defining q-table
         self.qtable = np.load(self.qfile)
         # last state and action
@@ -30,7 +32,8 @@ class QLearningAgent:
         self.cum_reward = 0
         self.cum_rewards = []
         self.current_episode = 1
-        self.total_episodes = 1000
+        # count number of iterations
+        self.time_steps = 0
 
 
     def get_state(self, theta, theta_dot):
@@ -92,12 +95,17 @@ class QLearningAgent:
         self.qtable[state, action] = q_old + self.alpha * (q_new - q_old)
         
         # collect convergence data
+        rew = 0.0
+        if state != self.fail_state:
+            rew = 1.0
+
         if self.current_episode == num_episodes:
-            self.cum_reward += reward
+            self.cum_reward += rew
         else:
-            self.cum_rewards.append(self.cum_reward)
-            self.cum_reward = reward
+            self.cum_rewards.append(self.cum_reward/self.time_steps)
+            self.cum_reward = rew
             self.current_episode += 1
+            self.time_steps = 0
 
         # save updated qtable and convergence data
         if num_episodes == self.total_episodes:
@@ -113,6 +121,8 @@ class QLearningAgent:
         Applies QLearning algorithm to select an action
         and then apply a force to the cart
         '''
+        self.time_steps += 1
+
         state = self.get_state(theta, theta_dot)
         if self.last_state is not None:
             reward = self.reward_function(theta, theta_dot, self.last_action)
