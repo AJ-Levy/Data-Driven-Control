@@ -1,38 +1,29 @@
 import matlab.engine
 import neat
-import pickle
+import dill
 import neat.config
 import numpy as np
-import os
 import matplotlib.pyplot as plt
+import NEATactivations as activations
 
 def fitness(angle_lst, angle_v_lst, time_lst):
     '''
     Fitness is determined by:
-    (1/num. iterations) *
-    sum [time * (w_a*(a_worst - a_error)^2 + w_v*(v_worst - v_error)^2)]
+    sum[(pi/2 - angle)^3] / num. iterations
     '''
     dt = 0.001
-    t_max = 5
+    t_max = 4
     n_max = t_max/dt
     fitness_sum = 0
-    w_a = 1 #angle weighting
-    w_v = 0 #velocity weighting
 
-    if (len(angle_lst) != len(angle_v_lst)) or (len(angle_lst) != len(time_lst)):
-        print("ERROR: List storage is of varying lengths")
-        return None
+    for k in range(len(angle_lst)):
+        if -np.pi/2 < angle_lst[k] < np.pi/2:
+            fitness_sum += (np.pi/2 - np.abs(angle_lst[k]))**3
+
+    fitness = fitness_sum/n_max
     
-    else:
-        for k in range(len(angle_lst)):
-            if -np.pi/2 < angle_lst[k] < np.pi/2:
-                fitness_sum += ( (w_a * angle_lst[k]**2) + (w_v * angle_v_lst[k]**2) )
-
-        fitness_sum += ( ((t_max-time_lst[-1])/dt) * (w_a * (np.pi/2)**2) )
-        fitness = (np.pi/2)**2 - fitness_sum/n_max
-        
-        print("Fitness score:", round(fitness,4))
-        return fitness
+    print("Fitness score:", round(fitness,4))
+    return fitness
 
 
 def eval_genomes(genomes, config):
@@ -44,8 +35,8 @@ def eval_genomes(genomes, config):
         
         # Create and send ANN to controller
         net = neat.nn.FeedForwardNetwork.create(genome, config)
-        with open('network.pkl', 'wb') as f:
-            pickle.dump(net, f)
+        with open('network.dill', 'wb') as f:
+            dill.dump(net, f)
         
         # Call simulation for the genome (ANN)
         eng.eval("out = sim('pendSimNEAT.slx');", nargout=0)
@@ -70,19 +61,20 @@ def eval_genomes(genomes, config):
 
         genome.fitness = fitness(angle_lst, angle_v_lst, time_lst)
 
-def tan(x):
-    return np.tan(x)
-
 def run(config_file):
     '''
     NEAT run method to handle configuration, 
     population, and statistics.
     '''
     # Load configuration
-    #neat.config.genome_config.add_activation('my_tan', tan)
     config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
                                 neat.DefaultSpeciesSet, neat.DefaultStagnation,
                                 config_file)
+    
+    # Add my own activation functions
+    activation_functions = activations.get_functions()
+    for name, function in activation_functions:
+        config.genome_config.add_activation(name, function)
     
     # Create the population and add stats reporter.
     pop = neat.Population(config)
@@ -99,7 +91,7 @@ def run(config_file):
     eng = matlab.engine.start_matlab()
 
     # Run NEAT and return best Genome
-    pop.run(eval_genomes, 20)
+    pop.run(eval_genomes, 30)
     eng.quit()
     return stats.best_genome()
 
@@ -109,8 +101,8 @@ def main():
     Main method.
     '''
     winner = run("config.txt")
-    with open('winnerANN.pkl', 'wb') as f:
-            pickle.dump(winner, f)
+    with open('winnerANN.dill', 'wb') as f:
+            dill.dump(winner, f)
     print(winner)
 
 if __name__ == '__main__':

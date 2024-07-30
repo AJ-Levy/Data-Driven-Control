@@ -1,7 +1,7 @@
 [NEAT]
 fitness_criterion     = max
-fitness_threshold     = 2.468
-pop_size              = 50
+fitness_threshold     = 3.875
+pop_size              = 100
 reset_on_extinction   = False
 
 [DefaultStagnation]
@@ -18,9 +18,9 @@ compatibility_threshold = 3.0
 
 [DefaultGenome]
 # node activation options
-activation_default      = tanh
-activation_mutate_rate  = 0.0
-activation_options      = tanh
+activation_default      = tanh_
+activation_mutate_rate  = 0.1
+activation_options      = clamped_ cube_ identity_ tanh_
 
 # node aggregation options
 aggregation_default     = sum
@@ -46,7 +46,7 @@ conn_delete_prob        = 0.2
 
 # connection enable options
 enabled_default         = True
-enabled_mutate_rate     = 0.5
+enabled_mutate_rate     = 0.3
 
 feed_forward            = True
 initial_connection      = partial_direct 0.5
@@ -57,7 +57,7 @@ node_delete_prob        = 0.2
 
 # network parameters
 num_hidden              = 0
-num_inputs              = 3
+num_inputs              = 4
 num_outputs             = 1
 
 # node response options
@@ -75,5 +75,5 @@ weight_init_stdev       = 1.0
 weight_max_value        = 30
 weight_min_value        = -30
 weight_mutate_power     = 0.5
-weight_mutate_rate      = 0.8
+weight_mutate_rate      = 0.7
 weight_replace_rate     = 0.1
