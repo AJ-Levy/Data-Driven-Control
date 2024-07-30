@@ -4,3 +4,4 @@ slprj/
 *.npy
 *.autosave
 *.pkl
+test.py

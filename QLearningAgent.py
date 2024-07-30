@@ -2,12 +2,12 @@ import numpy as np
 
 class QLearningAgent:
 
-    def __init__(self, num_actions=2):
+    def __init__(self, num_actions=4):
         # files
         self.qfile = 'qtable.npy'
         self.convergence_file = 'qconverge.txt'
         # number of episodes
-        self.total_episodes = 1000
+        self.total_episodes = 1500
         # learning rate
         self.alpha = 0.1
         # discount factor
@@ -23,18 +23,17 @@ class QLearningAgent:
         self.last_state = None
         self.last_action = None
         # forces to be applied to cart
-        self.forces = [3.0, -3.0]
+        self.forces = [30.0, 10.0, -10.0, -30.0]
         # state parameters
         self.fail_state = -1
         self.num_actions = num_actions
-        self.num_states = 18 # 0 - 17
+        self.num_states = 144 # 0 - 17
         # track convergence by cumulative reward
         self.cum_reward = 0
         self.cum_rewards = []
         self.current_episode = 1
         # count number of iterations
         self.time_steps = 0
-
 
     def get_state(self, theta, theta_dot):
         '''
@@ -46,21 +45,42 @@ class QLearningAgent:
         box = 0
 
         # Failure state
-        if theta < -12 or theta > 12:
+        if theta < -60 or theta > 60:
             return self.fail_state
         
         # angles
-        if (theta < -6): box = 0
-        elif (theta < -1): box = 1
-        elif (theta < 0): box = 2
-        elif (theta < 1): box = 3
-        elif (theta < 6): box = 4
-        else: box = 5
+        if (theta < -51): box = 0
+        elif(theta < -46): box = 1
+        elif (theta < -41): box = 2
+        elif (theta < -36): box = 3
+        elif (theta < -31): box = 4
+        elif(theta < -26): box = 5
+        elif (theta < -21): box = 6
+        elif(theta < -16): box = 7
+        elif (theta < -11): box = 8
+        elif (theta < -6): box = 9
+        elif (theta < -1): box = 10
+        elif (theta < 0): box = 11
+        elif (theta < 1): box = 12
+        elif (theta < 6): box = 13
+        elif (theta < 11): box = 14
+        elif(theta < 16): box = 15
+        elif (theta < 21): box = 16
+        elif (theta < 26): box = 17
+        elif(theta < 31): box = 18
+        elif (theta < 36): box = 19
+        elif (theta < 41): box = 20
+        elif (theta < 46): box = 21
+        elif(theta < 51): box = 22
+        else: box = 23
 
         # angular velocities
         if (theta_dot < -50): pass
-        elif (theta_dot < 50):  box += 6
-        else: box += 12
+        elif (theta_dot < -25): box += 24
+        elif (theta_dot < 0): box += 48
+        elif (theta_dot < 25): box += 72
+        elif (theta_dot < 50):  box += 96
+        else: box += 120
 
         return box
             
@@ -142,7 +162,12 @@ class QLearningAgent:
 
         (source: https://github.com/openai/gym/blob/master/gym/envs/classic_control/pendulum.py)
         '''
-        return -(theta**2 + 0.1 * theta_dot**2 + 0.001 * self.forces[last_action]**2)
+        angle_penalty = theta**2 
+        ang_velocity_penalty = 0.1 * theta_dot**2 
+        action_penalty = 0.001 * self.forces[last_action]**2
+        #time_penalty = 0.001 * self.time_steps
+
+        return -(angle_penalty + ang_velocity_penalty + action_penalty)
         
         
 # QLearning agent

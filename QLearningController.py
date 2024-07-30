@@ -2,19 +2,18 @@ import numpy as np
 
 class QLearningController:
 
-    def __init__(self, num_actions=2):
+    def __init__(self, num_actions=4):
         # qtable file
         self.qfile = 'qtable.npy'
         # defining q-table
         self.qtable = np.load(self.qfile)
         # last state and action
-        self.last_state = None
         self.last_action = None
         # forces to be applied to cart
-        self.forces = [3.0, -3.0]
+        self.forces = [10.0, 30.0, -10.0, -30.0]
         # state parameters
         self.num_actions = num_actions
-        self.num_states = 18 # 0 - 17
+        self.num_states = 144 # 0 - 17
         self.fail_state = -1
 
     def get_state(self, theta, theta_dot):
@@ -27,21 +26,42 @@ class QLearningController:
         box = 0
 
         # Failure state
-        if theta < -12 or theta > 12:
+        if theta < -60 or theta > 60:
             return self.fail_state
         
         # angles
-        if (theta < -6): box = 0
-        elif (theta < -1): box = 1
-        elif (theta < 0): box = 2
-        elif (theta < 1): box = 3
-        elif (theta < 6): box = 4
-        else: box = 5
+        if (theta < -51): box = 0
+        elif(theta < -46): box = 1
+        elif (theta < -41): box = 2
+        elif (theta < -36): box = 3
+        elif (theta < -31): box = 4
+        elif(theta < -26): box = 5
+        elif (theta < -21): box = 6
+        elif(theta < -16): box = 7
+        elif (theta < -11): box = 8
+        elif (theta < -6): box = 9
+        elif (theta < -1): box = 10
+        elif (theta < 0): box = 11
+        elif (theta < 1): box = 12
+        elif (theta < 6): box = 13
+        elif (theta < 11): box = 14
+        elif(theta < 16): box = 15
+        elif (theta < 21): box = 16
+        elif (theta < 26): box = 17
+        elif(theta < 31): box = 18
+        elif (theta < 36): box = 19
+        elif (theta < 41): box = 20
+        elif (theta < 46): box = 21
+        elif(theta < 51): box = 22
+        else: box = 23
 
         # angular velocities
         if (theta_dot < -50): pass
-        elif (theta_dot < 50):  box += 6
-        else: box += 12
+        elif (theta_dot < -25): box += 24
+        elif (theta_dot < 0): box += 48
+        elif (theta_dot < 25): box += 72
+        elif (theta_dot < 50):  box += 96
+        else: box += 120
 
         return box
 
@@ -64,18 +84,27 @@ class QLearningController:
         force = self.forces[action]
 
         return force
+    
+class PDController:
+    def __init__(self, K_p, K_d):
+        self.K_p = K_p
+        self.K_d = K_d
         
 # QLearning controller
-controller = QLearningController()     
+controller = QLearningController()   
+PD = PDController(K_p = 100, K_d = 20)  
 
 def controller_call(rad_big, theta_dot):
     '''
     Method that MATLAB calls for QLearning
     '''
-    global controller
+    global controller, PD
     # Normalize the angle (between -pi and pi)
     theta = (rad_big%(np.sign(rad_big)*2*np.pi))
     if theta >= np.pi:
         theta -= 2 * np.pi
-    force = controller.get_force(theta, theta_dot)
+    if np.abs(theta) > 12:
+        force = -PD.K_p * theta - PD.K_d * theta_dot
+    else:
+        force = controller.get_force(theta, theta_dot)
     return force

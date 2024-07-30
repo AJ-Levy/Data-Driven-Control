@@ -15,7 +15,7 @@ def viewTable(qtable_file='qtable.npy'):
     print(qtable)
 
 # reset Q table
-def reset(num_states=18, num_actions=2, qtable_file='qtable.npy'):
+def reset(num_states=144, num_actions=4, qtable_file='qtable.npy'):
     '''
     Reset QTable to 2D array of zeros of size
     num_states x num_actions.
@@ -23,7 +23,7 @@ def reset(num_states=18, num_actions=2, qtable_file='qtable.npy'):
     qtable = np.zeros((num_states, num_actions))
     np.save(qtable_file, qtable)
 
-def train(eng, model, mask, convergence_data_file, num_episodes=1000, count=0):
+def train(eng, model, mask, convergence_data_file, num_episodes=1500, count=0):
     '''
     Train QLearning Agent
     '''
@@ -33,17 +33,17 @@ def train(eng, model, mask, convergence_data_file, num_episodes=1000, count=0):
 
     reset()
     for episode in range(1,num_episodes+1):
-        intial_angle = genIntialAngle()
+        initial_angle = genIntialAngle()
         # pass in current episode
         eng.set_param(f'{model}/numEpisodes', 'Value', str(episode), nargout=0)
         # pass in random intial angular offset
-        eng.set_param(f'{model}/{mask}', 'init', str(intial_angle), nargout=0)
+        eng.set_param(f'{model}/{mask}', 'init', str(initial_angle), nargout=0)
         eng.sim(model)
         if episode % (num_episodes//10) == 0:
             count += 1 
             print(f"{count*10}%")
 
-def genIntialAngle(delta=0.2):
+def genIntialAngle(delta=np.pi/3):
     '''
     Generates a random intial angle about 0 radians.
     The angles lies in the range [-delta, delta) radians.
@@ -71,16 +71,17 @@ def main(trainModel = True,
     #######################################
     print("Running simulation...")
     eng.load_system(controllerModel, nargout=0)
-    intial_angle = genIntialAngle()
-    while intial_angle <= stabilisation_precision and intial_angle >= -stabilisation_precision:
-        intial_angle = genIntialAngle()
+    initial_angle = genIntialAngle()
+    while initial_angle <= stabilisation_precision and initial_angle >= -stabilisation_precision:
+        initial_angle = genIntialAngle()
     # pass in random intial angular offset
-    eng.set_param(f'{controllerModel}/{cartPoleSubsystem}', 'init', str(intial_angle), nargout=0)
+    eng.set_param(f'{controllerModel}/{cartPoleSubsystem}', 'init', str(initial_angle), nargout=0)
     eng.eval(f"out = sim('{controllerModel}');", nargout=0)
     print("Final QTable")
     viewTable()
     duration = time.time() - start_time
     print(f"Simulation complete in {duration:.1f} secs")
+    print(f"Initial Angle: {np.rad2deg(initial_angle):.1f} degrees")
 
     ## Data Presentation
     # Get angles
@@ -102,7 +103,7 @@ def main(trainModel = True,
     plt.xlabel("Time (s)")
     plt.ylabel("Theta (rad)")
     plt.xlim(0,max(time_lst))
-    plt.ylim(-0.5,0.5)
+    plt.ylim(-np.pi/2,np.pi/2)
     plt.title("Angle of pendulum over time")
     plt.legend()
     plt.show()
@@ -126,4 +127,4 @@ def main(trainModel = True,
     eng.quit()
 
 if __name__ == '__main__':
-    main(trainModel=True)
+    main(trainModel=False)
