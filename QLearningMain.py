@@ -71,35 +71,36 @@ def main(trainModel = True,
     #######################################
     print("Running simulation...")
     eng.load_system(controllerModel, nargout=0)
-    initial_angle = genIntialAngle()
-    while initial_angle <= stabilisation_precision and initial_angle >= -stabilisation_precision:
-        initial_angle = genIntialAngle()
-    # pass in random intial angular offset
-    eng.set_param(f'{controllerModel}/{cartPoleSubsystem}', 'init', str(initial_angle), nargout=0)
-    eng.eval(f"out = sim('{controllerModel}');", nargout=0)
-    print("Final QTable")
-    viewTable()
-    duration = time.time() - start_time
-    print(f"Simulation complete in {duration:.1f} secs")
-    print(f"Initial Angle: {np.rad2deg(initial_angle):.1f} degrees")
+   
+    # show all angles in specified range do acutally stabilise
+    for angle_it in range(-55, 65, 20):
+        # pass in angular offset
+        ang = np.deg2rad(angle_it)
+        eng.set_param(f'{controllerModel}/{cartPoleSubsystem}', 'init', str(ang), nargout=0)
+        eng.eval(f"out = sim('{controllerModel}');", nargout=0)
+        #print("Final QTable")
+        #viewTable()
+        #print(f"Initial Angle: {np.rad2deg(initial_angle):.1f} degrees")
 
-    ## Data Presentation
-    # Get angles
-    angle_2d = eng.eval("out.angle")
-    angle_lst = []
-    for angle in angle_2d:
-        angle_lst.append(angle[0])
+        ## Data Presentation
+        # Get angles
+        angle_2d = eng.eval("out.angle")
+        angle_lst = []
+        for a in angle_2d:
+            angle_lst.append(a[0])
 
-    # Get time
-    time_2d = eng.eval("out.time")
-    time_lst = []
-    for time in time_2d:
-        time_lst.append(time[0])
+        # Get time
+        time_2d = eng.eval("out.time")
+        time_lst = []
+        for t in time_2d:
+            time_lst.append(t[0])
 
-    # Plot data
-    plt.plot(time_lst, angle_lst, label = "Output Signal")
-    plt.axhline(y=stabilisation_precision, color='k', linestyle='--', label=f'{stabilisation_precision} rad')
-    plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'-{stabilisation_precision} rad')
+        # Plot data
+        plt.plot(time_lst, angle_lst, label = f"{angle_it} deg")
+        
+    # configure plot
+    plt.axhline(y=stabilisation_precision, color='k', linestyle='--')
+    plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'+/-{np.rad2deg(stabilisation_precision):.0f} deg')
     plt.xlabel("Time (s)")
     plt.ylabel("Theta (rad)")
     plt.xlim(0,max(time_lst))
@@ -107,6 +108,9 @@ def main(trainModel = True,
     plt.title("Angle of pendulum over time")
     plt.legend()
     plt.show()
+
+    duration = time.time() - start_time
+    print(f"Simulation complete in {duration:.1f} secs")
 
     # Load convergence data
     episodes = []
