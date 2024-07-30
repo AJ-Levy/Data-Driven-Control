@@ -1,8 +1,8 @@
 # Data-Driven Control
 
 TODO:
-- Write own activation function using tanh.
-- Add noise to pendulum sim.
+- DONE: Write own activation function using tanh.
+- DONE: Add noise to pendulum sim.
 - Get started on buck-boost converter.
 
 Run the *PIDmain.py* file. 
