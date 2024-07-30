@@ -23,7 +23,7 @@ class QLearningAgent:
         self.last_state = None
         self.last_action = None
         # forces to be applied to cart
-        self.forces = [30.0, 10.0, -10.0, -30.0]
+        self.forces = [10.0, 30.0, -10.0, -30.0]
         # state parameters
         self.fail_state = -1
         self.num_actions = num_actions
@@ -162,12 +162,14 @@ class QLearningAgent:
 
         (source: https://github.com/openai/gym/blob/master/gym/envs/classic_control/pendulum.py)
         '''
+        # bonus for remaining close to equilibirum
+        stability_bonus = 10 if abs(theta) < 0.05 and abs(theta_dot) < 0.1 else 0
+
         angle_penalty = theta**2 
         ang_velocity_penalty = 0.1 * theta_dot**2 
         action_penalty = 0.001 * self.forces[last_action]**2
-        #time_penalty = 0.001 * self.time_steps
 
-        return -(angle_penalty + ang_velocity_penalty + action_penalty)
+        return -(angle_penalty + ang_velocity_penalty + action_penalty) + stability_bonus
         
         
 # QLearning agent
