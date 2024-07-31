@@ -23,7 +23,7 @@ def reset(num_states=144, num_actions=4, qtable_file='qtable.npy'):
     qtable = np.zeros((num_states, num_actions))
     np.save(qtable_file, qtable)
 
-def train(eng, model, mask, convergence_data_file, num_episodes=1500, count=0):
+def train(eng, model, mask, convergence_data_file, num_episodes=2000, count=0):
     '''
     Train QLearning Agent
     '''
@@ -73,7 +73,7 @@ def main(trainModel = True,
     eng.load_system(controllerModel, nargout=0)
    
     # show all angles in specified range do acutally stabilise
-    for angle_it in range(-55, 65, 20):
+    for angle_it in range(-55, 65, 10):
         # pass in angular offset
         ang = np.deg2rad(angle_it)
         eng.set_param(f'{controllerModel}/{cartPoleSubsystem}', 'init', str(ang), nargout=0)
@@ -96,15 +96,15 @@ def main(trainModel = True,
             time_lst.append(t[0])
 
         # Plot data
-        plt.plot(time_lst, angle_lst, label = f"{angle_it} deg")
+        plt.plot(time_lst, angle_lst, label = f"{ang:.2f} rad")
         
     # configure plot
     plt.axhline(y=stabilisation_precision, color='k', linestyle='--')
-    plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'+/-{np.rad2deg(stabilisation_precision):.0f} deg')
+    plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'± {stabilisation_precision:.2f} rad')
     plt.xlabel("Time (s)")
-    plt.ylabel("Theta (rad)")
+    plt.ylabel("θ (rad)")
     plt.xlim(0,max(time_lst))
-    plt.ylim(-np.pi/2,np.pi/2)
+    plt.ylim(-np.pi/2, np.pi/2)
     plt.title("Angle of pendulum over time")
     plt.legend()
     plt.show()
@@ -131,4 +131,4 @@ def main(trainModel = True,
     eng.quit()
 
 if __name__ == '__main__':
-    main(trainModel=False)
+    main(trainModel=True)
