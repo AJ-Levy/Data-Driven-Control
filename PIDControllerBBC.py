@@ -35,7 +35,7 @@ class PIDController:
         return output_force
 
 # Create PID object
-pid_controller = PIDController(Kp=40, Ki=10, Kd=0.8, dt=0.005)
+pid_controller = PIDController(Kp=0.1, Ki=0.01, Kd=0.001, dt=0.001)
 
 def controller_call(measurement, setpoint):
     '''

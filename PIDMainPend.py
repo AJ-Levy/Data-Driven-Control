@@ -5,7 +5,7 @@ import numpy as np
 def main(model = 'pendSimPID',
          mask = 'Pendulum and Cart',
          stabilisation_precision = 0.05,
-         delta = 0.2):
+         delta = np.pi/3):
     '''
     Main method to set up MATLAB, simulink,
     and handle data aquisition/plotting.
@@ -44,7 +44,7 @@ def main(model = 'pendSimPID',
     plt.ylabel("Theta (rad)")
     plt.title("Angle of pendulum over time")
     plt.xlim(0,max(time_lst))
-    plt.ylim(-0.5,0.5)
+    plt.ylim(-np.pi/2,np.pi/2)
     plt.legend()
     plt.show()
 
