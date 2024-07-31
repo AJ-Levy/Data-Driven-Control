@@ -84,27 +84,18 @@ class QLearningController:
         force = self.forces[action]
 
         return force
-    
-class PDController:
-    def __init__(self, K_p, K_d):
-        self.K_p = K_p
-        self.K_d = K_d
         
 # QLearning controller
 controller = QLearningController()   
-PD = PDController(K_p = 100, K_d = 20)  
 
 def controller_call(rad_big, theta_dot):
     '''
     Method that MATLAB calls for QLearning
     '''
-    global controller, PD
+    global controller
     # Normalize the angle (between -pi and pi)
     theta = (rad_big%(np.sign(rad_big)*2*np.pi))
     if theta >= np.pi:
         theta -= 2 * np.pi
-    if np.abs(theta) > 12:
-        force = -PD.K_p * theta - PD.K_d * theta_dot
-    else:
-        force = controller.get_force(theta, theta_dot)
+    force = controller.get_force(theta, theta_dot)
     return force
