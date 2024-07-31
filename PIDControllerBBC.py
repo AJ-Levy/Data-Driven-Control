@@ -11,12 +11,12 @@ class PIDController:
         self.integral_error = 0
         self.previous_error = 0
 
-    def update(self, setpoint, measurement):
+    def update(self, voltage):
         '''
         Determines the output force accoring to PID.
         '''
         # Proportional error
-        error = setpoint - measurement
+        error = voltage
 
         # Integral error
         self.integral_error += error * self.dt
@@ -35,11 +35,11 @@ class PIDController:
         return output_force
 
 # Create PID object
-pid_controller = PIDController(Kp=0.1, Ki=0.01, Kd=0.001, dt=0.001)
+pid_controller = PIDController(Kp=0.01, Ki=5, Kd=0.0, dt=0.001)
 
-def controller_call(measurement, setpoint):
+def controller_call(voltage):
     '''
     Method that MATLAB calls for PID.
     '''
-    force = pid_controller.update(setpoint, measurement)
+    force = pid_controller.update(voltage)
     return force

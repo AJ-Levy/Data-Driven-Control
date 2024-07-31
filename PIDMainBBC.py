@@ -17,10 +17,10 @@ def main(desired_voltage = 12,
     eng.load_system(model, nargout=0)
 
     # Set desired output voltage
-    eng.set_param(f'{model}/finalVoltage', 'Value', str(desired_voltage), nargout=0)
+    #eng.set_param(f'{model}/finalVoltage', 'Value', str(desired_voltage), nargout=0)
     
     # Set initial voltage
-    eng.set_param(f'{model}/{mask}/{block}', 'Amplitude', str(source_voltage), nargout=0)
+    #eng.set_param(f'{model}/{mask}/{block}', 'Amplitude', str(source_voltage), nargout=0)
 
     print("Running simulation...")
     eng.eval(f"out = sim('{model}');", nargout=0)
@@ -46,7 +46,6 @@ def main(desired_voltage = 12,
     plt.xlim(0,max(time_lst))
     plt.legend()
     plt.show()
-    print(voltage_lst)
 
     eng.quit()
 
