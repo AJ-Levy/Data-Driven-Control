@@ -7,7 +7,7 @@ class QLearningAgent:
         self.qfile = 'qtable.npy'
         self.convergence_file = 'qconverge.txt'
         # number of episodes
-        self.total_episodes = 2000
+        self.total_episodes = 1500
         # learning rate
         self.alpha = 0.1
         # discount factor
@@ -162,7 +162,8 @@ class QLearningAgent:
 
         (source: https://github.com/openai/gym/blob/master/gym/envs/classic_control/pendulum.py)
         '''
-        stabilisation_reward = 10 if np.linalg.norm([theta, theta_dot]) < 0.05 else 0
+        
+        stabilisation_reward = 10 if np.linalg.norm([theta, theta_dot]) < 0.1 else 0
         angle_penalty = theta**2 
         ang_velocity_penalty = 0.1 * theta_dot**2 
         action_penalty = 0.001 * self.forces[last_action]**2

@@ -23,7 +23,7 @@ def reset(num_states=144, num_actions=4, qtable_file='qtable.npy'):
     qtable = np.zeros((num_states, num_actions))
     np.save(qtable_file, qtable)
 
-def train(eng, model, mask, convergence_data_file, num_episodes=2000, count=0):
+def train(eng, model, mask, convergence_data_file, num_episodes=1500, count=0):
     '''
     Train QLearning Agent
     '''
@@ -43,6 +43,14 @@ def train(eng, model, mask, convergence_data_file, num_episodes=2000, count=0):
             count += 1 
             print(f"{count*10}%")
 
+def setNoise(eng, model, noise):
+    if noise:
+        eng.set_param(f'{model}/Noise', 'Cov', str([0.00001]), nargout=0)
+        eng.set_param(f'{model}/Noise_v', 'Cov', str([0.001]), nargout=0)
+    else:
+        eng.set_param(f'{model}/Noise', 'Cov', str([0]), nargout=0)
+        eng.set_param(f'{model}/Noise_v', 'Cov', str([0]), nargout=0)
+
 def genIntialAngle(delta=np.pi/3):
     '''
     Generates a random intial angle about 0 radians.
@@ -51,6 +59,7 @@ def genIntialAngle(delta=np.pi/3):
     return np.random.uniform(-delta, delta)
 
 def main(trainModel = True, 
+         noise = False,
          trainingModel = 'pendSimQTraining', 
          controllerModel = 'pendSimQController',
          cartPoleSubsystem = 'Pendulum and Cart',
@@ -71,6 +80,7 @@ def main(trainModel = True,
     #######################################
     print("Running simulation...")
     eng.load_system(controllerModel, nargout=0)
+    setNoise(eng, controllerModel, noise)
    
     # show all angles in specified range do acutally stabilise
     for angle_it in range(-55, 65, 10):
@@ -106,7 +116,7 @@ def main(trainModel = True,
     plt.xlim(0,max(time_lst))
     plt.ylim(-np.pi/2, np.pi/2)
     plt.title("Angle of pendulum over time")
-    plt.legend()
+    plt.legend(loc = 'upper right')
     plt.show()
 
     duration = time.time() - start_time
@@ -131,4 +141,4 @@ def main(trainModel = True,
     eng.quit()
 
 if __name__ == '__main__':
-    main(trainModel=True)
+    main(trainModel=False, noise=True)
