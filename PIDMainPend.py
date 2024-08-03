@@ -2,7 +2,17 @@ import matlab.engine
 import matplotlib.pyplot as plt
 import numpy as np
 
-def main(model = 'pendSimPID',
+def setNoise(eng, model, noise):
+    '''
+    Sets appropriate amount of noise if required
+    '''
+    if noise:
+        eng.set_param(f'{model}/Noise', 'Cov', str([0.00001]), nargout=0)
+    else:
+        eng.set_param(f'{model}/Noise', 'Cov', str([0]), nargout=0)
+
+def main(noise = False,
+         model = 'pendSimPID',
          mask = 'Pendulum and Cart',
          stabilisation_precision = 0.05,
          delta = np.pi/3):
@@ -13,6 +23,9 @@ def main(model = 'pendSimPID',
     print("Setting up engine...")
     eng = matlab.engine.start_matlab()
     eng.load_system(model, nargout=0)
+
+    # Set noise
+    setNoise(eng, model, noise)
     
     # Set random intial angle
     intial_angle = np.random.uniform(-delta, delta)
@@ -51,4 +64,4 @@ def main(model = 'pendSimPID',
     eng.quit()
 
 if __name__ == '__main__':
-    main()
+    main(noise=True)
