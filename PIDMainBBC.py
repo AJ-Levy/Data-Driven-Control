@@ -26,6 +26,14 @@ def main(desired_voltage = 12,
     eng.eval(f"out = sim('{model}');", nargout=0)
     print("Simulation complete")
 
+    # Get force data
+    # Get angles
+    pulse_2d = eng.eval("out.pulse")
+    pulse_lst = []
+    for p in pulse_2d:
+        pulse_lst.append(p[0])
+    print(min(pulse_lst), max(pulse_lst))
+
     # Get angles
     voltage_2d = eng.eval("out.Vout")
     voltage_lst = []
