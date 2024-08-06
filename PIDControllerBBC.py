@@ -66,7 +66,7 @@ class PIDController:
         return saturated_output
 
 # Create PID object
-pid_controller = PIDController(Kp=0.01, Ki=5, Kd=0)
+pid_controller = PIDController(Kp=0.01, Ki=5, Kd=0.0)
 
 def controller_call(voltage, time):
     '''
