@@ -39,8 +39,8 @@ class PIDController:
         if self.previous_time is None:
             self.previous_time = time
             # return intial duty cycle
-            intial_output = self.Kp * error + self.Ki * self.integral_error
-            return self.saturation(intial_output, self.saturation_min, self.saturation_max)
+            initial_output = self.Kp * error + self.Ki * self.integral_error
+            return self.saturation(initial_output, self.saturation_min, self.saturation_max)
 
         # Calculate the time difference
         self.dt = time - self.previous_time
