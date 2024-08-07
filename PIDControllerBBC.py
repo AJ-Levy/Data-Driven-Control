@@ -8,7 +8,7 @@ class PIDController:
         self.Ki = Ki
         self.Kd = Kd
         self.dt = dt
-        self.integral_error = 0.1
+        self.integral_error = saturation_min
         self.previous_error = 0
         self.previous_time = None
         self.saturation_min = saturation_min
