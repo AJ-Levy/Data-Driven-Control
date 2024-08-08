@@ -2,7 +2,7 @@ import matlab.engine
 import matplotlib.pyplot as plt
 import numpy as np
 
-def main(desired_voltage = 30,
+def main(desired_voltage = 40,
          source_voltage = 48,
          model = 'pibuckconverter',
          block = 'input_voltage',
@@ -33,7 +33,7 @@ def main(desired_voltage = 30,
         pulse_lst.append(p[0])
     print(f"Average Duty Cycle: {np.median(pulse_lst):.3f}")
 
-    # Get angles
+    # Get voltages
     voltage_2d = eng.eval("Vout")
     voltage_lst = []
     for v in voltage_2d:
