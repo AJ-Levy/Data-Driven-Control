@@ -2,7 +2,7 @@ import matlab.engine
 import matplotlib.pyplot as plt
 import numpy as np
 
-def main(desired_voltage = 40,
+def main(desired_voltage = 30,
          source_voltage = 48,
          model = 'pibuckconverter',
          block = 'input_voltage',
