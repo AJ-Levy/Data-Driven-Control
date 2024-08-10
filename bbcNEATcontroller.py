@@ -41,7 +41,7 @@ def controller_call(volt, time):
         net_obj.update_prev(0, 0)
 
     # Return output pulse and update
-    inputs = [volt, net_obj.prev_pulse, net_obj.prev_volt]
+    inputs = [volt, net_obj.prev_pulse]
     pulse = (net_obj.net.activate(inputs)[0])
     net_obj.update_prev(pulse, volt)
     return pulse
