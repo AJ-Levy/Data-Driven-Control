@@ -7,7 +7,7 @@ class QLearningAgent:
         self.qfile = 'qtable_BBC.npy'
         self.convergence_file = 'qconverge_BBC.txt'
         # number of episodes
-        self.total_episodes = 1000
+        self.total_episodes = 500
         # learning rate
         self.alpha = 0.4
         # discount factor
@@ -27,7 +27,7 @@ class QLearningAgent:
         # state parameters
         self.fail_state = -1
         self.num_actions = num_actions
-        self.num_states = 144 # 0 - 17
+        self.num_states = 10 # 0 - 17
         # track convergence by cumulative reward
         self.cum_reward = 0
         self.cum_rewards = []
@@ -38,9 +38,44 @@ class QLearningAgent:
     def get_state(self, voltage):
         '''
         Convert continous parameters into discrete states
-        (source: https://pages.cs.wisc.edu/~finton/qcontroller.html)
         '''
-        pass
+        box = 0
+
+        if (voltage < -13 or voltage > 13):
+            return self.fail_state
+        
+        # voltages
+        '''
+        if voltage < -100: box = 0
+        if voltage < -80: box = 1
+        elif voltage < -60: box = 2
+        elif voltage < -40: box = 3
+        elif voltage < -30: box = 4
+        elif voltage < -23: box = 5
+        elif voltage < -16: box = 6
+       
+        '''
+        if voltage < -10: box = 0
+        elif voltage < -5: box = 1
+        elif voltage < -3: box = 2
+        elif voltage < -1: box = 3
+        elif voltage < 0: box = 4
+        elif voltage < 1: box = 5
+        elif voltage < 3: box = 6
+        elif voltage < 5: box = 7
+        elif voltage < 10: box = 8
+        else: box = 9
+        '''
+        elif voltage < 16: box = 16
+        elif voltage < 23: box = 17
+        elif voltage < 30: box = 18
+        elif voltage < 40: box = 19
+        elif voltage < 60: box = 20
+        elif voltage < 80: box = 21
+        elif voltage < 100: box = 22
+        '''
+
+        return box
             
 
     def select_action(self, state, num_episodes):
@@ -72,18 +107,15 @@ class QLearningAgent:
         q_new = reward + self.gamma * np.max(self.qtable[next_state])
         self.qtable[state, action] = q_old + self.alpha * (q_new - q_old)
         
-        # collect convergence data
-        rew = 0.0
-        if state != self.fail_state:
-            rew = 1.0
+        # for checking convergence
+        dQ = abs(self.qtable[state, action] - q_old)
+        if dQ > self.max_dQ:
+            self.max_dQ = dQ
 
-        if self.current_episode == num_episodes:
-            self.cum_reward += rew
-        else:
-            self.cum_rewards.append(self.cum_reward/self.time_steps)
-            self.cum_reward = rew
+        if self.current_episode != num_episodes:
+            self.cum_rewards.append(self.max_dQ)
+            self.max_dQ = 0
             self.current_episode += 1
-            self.time_steps = 0
 
         # save updated qtable and convergence data
         if num_episodes == self.total_episodes:
@@ -103,7 +135,7 @@ class QLearningAgent:
 
         state = self.get_state(voltage)
         if self.last_state is not None:
-            reward = self.reward_function(state)
+            reward = self.reward_function(voltage, self.last_action)
             self.update(self.last_state, self.last_action, reward, state, num_episodes)
         action = self.select_action(state, num_episodes)
         self.last_state = state
@@ -112,14 +144,14 @@ class QLearningAgent:
 
         return duty_cycle
         
-    def reward_function(self, state):
+    def reward_function(self, voltage, last_action):
         '''
         simple for now
         '''
-        if state == self.fail_state:
-            return 0.0
-        return 1.0
-        
+        voltage_penalty = (voltage)**2
+        previous_action_penalty = 0.001 * self.duty_cycles[last_action]
+
+        return -(voltage_penalty + previous_action_penalty)
         
 # QLearning agent
 agent = QLearningAgent()     

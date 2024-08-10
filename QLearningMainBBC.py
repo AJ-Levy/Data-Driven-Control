@@ -15,7 +15,7 @@ def viewTable(qtable_file='qtable_BBC.npy'):
     print(qtable)
 
 # reset Q table
-def reset(num_states=60, num_actions=2, qtable_file='qtable_BBC.npy'):
+def reset(num_states=10, num_actions=2, qtable_file='qtable_BBC.npy'):
     '''
     Reset QTable to 2D array of zeros of size
     num_states x num_actions.
@@ -32,7 +32,7 @@ def train(eng, model, mask, convergence_data_file, num_episodes=1000, count=0):
         os.remove(convergence_data_file)
 
     reset()
-    for episode in range(1,num_episodes+1):
+    for episode in range(1, num_episodes+1):
         # pass in current episode
         eng.set_param(f'{model}/numEpisodes', 'Value', str(episode), nargout=0)
         # pass in initial parameters (source voltage and reference voltage)
@@ -54,8 +54,8 @@ def setNoise(eng, model, noise):
 
 def main(trainModel = True, 
          noise = False,
-         trainingModel = 'bbcSimQTraining', 
-         controllerModel = 'bbcSimQController',
+         trainingModel = 'QBuckTraining', 
+         controllerModel = 'QBuckController',
          mask = 'BBC',
          convergence_data_file = 'qconverge_BBC.txt',
          stabilisation_precision = 0.05):
@@ -67,18 +67,26 @@ def main(trainModel = True,
     eng = matlab.engine.start_matlab()
     eng.load_system(trainingModel, nargout=0)
     start_time = time.time()
-    ## Comment Out Once Model is Trained ##
     if trainModel:
         print("Training model...")
         train(eng, trainingModel, mask, convergence_data_file)
-    #######################################
     print("Running simulation...")
     eng.load_system(controllerModel, nargout=0)
-    setNoise(eng, controllerModel, noise)
+    # uncomment once noise is added to sim
+    #setNoise(eng, controllerModel, noise)
+
+    # pass in initial parameters (source voltage and reference voltage)
+    source_voltage = 48
+    desired_voltage = 30
+    eng.set_param(f'{controllerModel}/finalVoltage', 'Value', str(desired_voltage), nargout=0)
+    eng.set_param(f'{controllerModel}/input_voltage', 'Amplitude', str(source_voltage), nargout=0)
+    eng.eval(f"out = sim('{controllerModel}');", nargout=0)
    
+
+    viewTable()
     ## Data Presentation
     # Get voltages
-    voltage_2d = eng.eval("Vout")
+    voltage_2d = eng.eval("voltage")
     voltage_lst = []
     for v in voltage_2d:
         voltage_lst.append(v[0])
@@ -86,8 +94,8 @@ def main(trainModel = True,
     # Get time
     time_2d = eng.eval("time")
     time_lst = []
-    for time in time_2d:
-        time_lst.append(time[0])
+    for t in time_2d:
+        time_lst.append(t[0])
 
     # Plot data
     plt.plot(time_lst, voltage_lst, label = "Output Signal")
@@ -122,4 +130,4 @@ def main(trainModel = True,
     eng.quit()
 
 if __name__ == '__main__':
-    main(trainModel=False, noise=True)
+    main(trainModel=True, noise=False)

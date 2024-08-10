@@ -141,4 +141,4 @@ def main(trainModel = True,
     eng.quit()
 
 if __name__ == '__main__':
-    main(trainModel=False, noise=True)
+    main(trainModel=True, noise=False)
