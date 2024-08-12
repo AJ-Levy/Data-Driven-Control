@@ -15,7 +15,7 @@ def viewTable(qtable_file='qtable_BBC.npy'):
     print(qtable)
 
 # reset Q table
-def reset(num_states=10, num_actions=2, qtable_file='qtable_BBC.npy'):
+def reset(num_states=24, num_actions=4, qtable_file='qtable_BBC.npy'):
     '''
     Reset QTable to 2D array of zeros of size
     num_states x num_actions.
@@ -23,7 +23,7 @@ def reset(num_states=10, num_actions=2, qtable_file='qtable_BBC.npy'):
     qtable = np.zeros((num_states, num_actions))
     np.save(qtable_file, qtable)
 
-def train(eng, model, mask, convergence_data_file, num_episodes=1000, count=0):
+def train(eng, model, mask, convergence_data_file, source_voltage, desired_voltage, num_episodes=2000, count=0):
     '''
     Train QLearning Agent
     '''
@@ -36,8 +36,6 @@ def train(eng, model, mask, convergence_data_file, num_episodes=1000, count=0):
         # pass in current episode
         eng.set_param(f'{model}/numEpisodes', 'Value', str(episode), nargout=0)
         # pass in initial parameters (source voltage and reference voltage)
-        source_voltage = 48
-        desired_voltage = 30
         eng.set_param(f'{model}/finalVoltage', 'Value', str(desired_voltage), nargout=0)
         eng.set_param(f'{model}/input_voltage', 'Amplitude', str(source_voltage), nargout=0)
 
@@ -49,6 +47,8 @@ def train(eng, model, mask, convergence_data_file, num_episodes=1000, count=0):
 def setNoise(eng, model, noise):
     if noise:
         eng.set_param(f'{model}/Noise', 'Cov', str([0.00001]), nargout=0)
+        random_seed = np.random.randint(1, 100000)
+        eng.set_param(f'{model}/Noise', 'seed', str([random_seed]), nargout=0)
     else:
         eng.set_param(f'{model}/Noise', 'Cov', str([0]), nargout=0)
 
@@ -58,7 +58,9 @@ def main(trainModel = True,
          controllerModel = 'QBuckController',
          mask = 'BBC',
          convergence_data_file = 'qconverge_BBC.txt',
-         stabilisation_precision = 0.05):
+         stabilisation_precision = 0.05,
+        source_voltage = 48,
+        desired_voltage = 18):
 
     global time
 
@@ -69,15 +71,13 @@ def main(trainModel = True,
     start_time = time.time()
     if trainModel:
         print("Training model...")
-        train(eng, trainingModel, mask, convergence_data_file)
+        train(eng, trainingModel, mask, convergence_data_file, source_voltage, desired_voltage)
     print("Running simulation...")
     eng.load_system(controllerModel, nargout=0)
     # uncomment once noise is added to sim
     #setNoise(eng, controllerModel, noise)
 
     # pass in initial parameters (source voltage and reference voltage)
-    source_voltage = 48
-    desired_voltage = 30
     eng.set_param(f'{controllerModel}/finalVoltage', 'Value', str(desired_voltage), nargout=0)
     eng.set_param(f'{controllerModel}/input_voltage', 'Amplitude', str(source_voltage), nargout=0)
     eng.eval(f"out = sim('{controllerModel}');", nargout=0)

@@ -45,8 +45,12 @@ def train(eng, model, mask, convergence_data_file, num_episodes=1500, count=0):
 
 def setNoise(eng, model, noise):
     if noise:
+        random_seed = np.random.randint(1, 100000)
         eng.set_param(f'{model}/Noise', 'Cov', str([0.00001]), nargout=0)
+        eng.set_param(f'{model}/Noise', 'seed', str([random_seed]), nargout=0)
+        random_seed = np.random.randint(1, 100000)
         eng.set_param(f'{model}/Noise_v', 'Cov', str([0.001]), nargout=0)
+        eng.set_param(f'{model}/Noise_v', 'seed', str([random_seed]), nargout=0)
     else:
         eng.set_param(f'{model}/Noise', 'Cov', str([0]), nargout=0)
         eng.set_param(f'{model}/Noise_v', 'Cov', str([0]), nargout=0)
@@ -80,13 +84,13 @@ def main(trainModel = True,
     #######################################
     print("Running simulation...")
     eng.load_system(controllerModel, nargout=0)
-    setNoise(eng, controllerModel, noise)
    
     # show all angles in specified range do acutally stabilise
     for angle_it in range(-55, 65, 10):
         # pass in angular offset
         ang = np.deg2rad(angle_it)
         eng.set_param(f'{controllerModel}/{cartPoleSubsystem}', 'init', str(ang), nargout=0)
+        setNoise(eng, controllerModel, noise)
         eng.eval(f"out = sim('{controllerModel}');", nargout=0)
         #print("Final QTable")
         #viewTable()
@@ -132,9 +136,8 @@ def main(trainModel = True,
             rewards.append(float(reward))
 
     plt.plot(episodes, rewards, color = 'r')
-    plt.plot()
     plt.xlabel('Episodes')
-    plt.ylabel('Cumulative Reward per Time Step')
+    plt.ylabel('Cumulative Reward')
     plt.title('Convergence of Q-learning')
     plt.show()
 

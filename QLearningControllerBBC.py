@@ -2,7 +2,7 @@ import numpy as np
 
 class QLearningController:
 
-    def __init__(self, num_actions=2):
+    def __init__(self, num_actions=4):
         # qtable file
         self.qfile = 'qtable_BBC.npy'
         # defining q-table
@@ -10,7 +10,7 @@ class QLearningController:
         # last state and action
         self.last_action = None
         # forces to be applied to cart
-        self.duty_cycles = [0,1]
+        self.duty_cycles = [0.1, 0.3, 0.6, 0.9]
         # state parameters
         self.num_actions = num_actions
         self.num_states = 10 # 0 - 17
@@ -22,11 +22,11 @@ class QLearningController:
         '''
         box = 0
 
-        if (voltage < -13 or voltage > 13):
+        if (voltage < -120 or voltage > 120):
             return self.fail_state
         
         # voltages
-        '''
+        
         if voltage < -100: box = 0
         if voltage < -80: box = 1
         elif voltage < -60: box = 2
@@ -34,19 +34,15 @@ class QLearningController:
         elif voltage < -30: box = 4
         elif voltage < -23: box = 5
         elif voltage < -16: box = 6
-       
-        '''
-        if voltage < -10: box = 0
-        elif voltage < -5: box = 1
-        elif voltage < -3: box = 2
-        elif voltage < -1: box = 3
-        elif voltage < 0: box = 4
-        elif voltage < 1: box = 5
-        elif voltage < 3: box = 6
-        elif voltage < 5: box = 7
-        elif voltage < 10: box = 8
-        else: box = 9
-        '''
+        elif voltage < -10: box = 7
+        elif voltage < -5: box = 8
+        elif voltage < -3: box = 9
+        elif voltage < -1: box = 10
+        elif voltage < 0: box = 11
+        elif voltage < 1: box = 12
+        elif voltage < 3: box = 13
+        elif voltage < 5: box = 14
+        elif voltage < 10: box = 15
         elif voltage < 16: box = 16
         elif voltage < 23: box = 17
         elif voltage < 30: box = 18
@@ -54,7 +50,7 @@ class QLearningController:
         elif voltage < 60: box = 20
         elif voltage < 80: box = 21
         elif voltage < 100: box = 22
-        '''
+        else: box = 23
 
         return box
     

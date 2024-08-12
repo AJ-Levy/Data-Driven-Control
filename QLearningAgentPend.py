@@ -29,9 +29,11 @@ class QLearningAgent:
         self.num_actions = num_actions
         self.num_states = 144 # 0 - 17
         # track convergence by cumulative reward
-        self.max_dQ = 0
+        self.cum_reward = 0
         self.cum_rewards = []
         self.current_episode = 1
+        # count number of iterations
+        self.time_steps = 0
 
     def get_state(self, theta, theta_dot):
         '''
@@ -112,16 +114,18 @@ class QLearningAgent:
         q_new = reward + self.gamma * np.max(self.qtable[next_state])
         self.qtable[state, action] = q_old + self.alpha * (q_new - q_old)
         
-        # for checking convergence
-        dQ = abs(self.qtable[state, action] - q_old)
-        if dQ > self.max_dQ:
-            self.max_dQ = dQ
+        # collect convergence data
+        rew = 0.0
+        if state != self.fail_state:
+            rew = 1.0
 
-        
-        if self.current_episode != num_episodes:
-            self.cum_rewards.append(self.max_dQ)
-            self.max_dQ = 0
+        if self.current_episode == num_episodes:
+            self.cum_reward += rew
+        else:
+            self.cum_rewards.append(self.cum_reward/self.time_steps)
+            self.cum_reward = rew
             self.current_episode += 1
+            self.time_steps = 0
 
         # save updated qtable and convergence data
         if num_episodes == self.total_episodes:
@@ -137,6 +141,8 @@ class QLearningAgent:
         Applies QLearning algorithm to select an action
         and then apply a force to the cart
         '''
+        self.time_steps += 1
+
         state = self.get_state(theta, theta_dot)
         if self.last_state is not None:
             reward = self.reward_function(theta, theta_dot, self.last_action)

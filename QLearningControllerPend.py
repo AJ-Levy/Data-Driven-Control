@@ -4,7 +4,7 @@ class QLearningController:
 
     def __init__(self, num_actions=4):
         # qtable file
-        self.qfile = 'qtable.npy'
+        self.qfile = 'qtable_10.npy'
         # defining q-table
         self.qtable = np.load(self.qfile)
         # last state and action
@@ -13,7 +13,7 @@ class QLearningController:
         self.forces = [10.0, 30.0, -10.0, -30.0]
         # state parameters
         self.num_actions = num_actions
-        self.num_states = 144 # 0 - 17
+        self.num_states = 144 # 0 - 143
         self.fail_state = -1
 
     def get_state(self, theta, theta_dot):
