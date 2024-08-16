@@ -2,12 +2,40 @@ import matlab.engine
 import matplotlib.pyplot as plt
 import numpy as np
 
+def check_stabilization(signal, margin=0.05, required_iterations=2000):
+    """
+    Check if the signal has stabilized around zero.
+    
+    Args:
+    signal (array-like): The signal data to check.
+    margin (float): The margin of error around zero to consider as stabilized.
+    required_iterations (int): The number of consecutive iterations within margin to consider as stabilized.
+    
+    Returns:
+    bool: True if the signal is stabilized, False otherwise.
+    int: The index at which stabilization starts, or -1 if not stabilized.
+    """
+    signal = np.array(signal)
+    n = len(signal)
+    
+    if required_iterations > n:
+        return False, -1
+    
+    for i in range(n - required_iterations + 1):
+        # Check if all values in the range are within the margin
+        if np.all(np.abs(signal[i:i + required_iterations]) < margin):
+            return True, i
+    
+    return False, -1
+
 def setNoise(eng, model, noise):
     '''
     Sets appropriate amount of noise if required
     '''
     if noise:
         eng.set_param(f'{model}/Noise', 'Cov', str([0.00001]), nargout=0)
+        random_seed = np.random.randint(1, 100000)
+        eng.set_param(f'{model}/Noise', 'seed', str([random_seed]), nargout=0)
     else:
         eng.set_param(f'{model}/Noise', 'Cov', str([0]), nargout=0)
 
@@ -22,16 +50,14 @@ def main(noise = False,
     '''
     print("Setting up engine...")
     eng = matlab.engine.start_matlab()
+
     eng.load_system(model, nargout=0)
 
-    # Set noise
+
     setNoise(eng, model, noise)
-    
-    # Set random intial angle
-    intial_angle = np.random.uniform(-delta, delta)
-    while intial_angle <= stabilisation_precision and intial_angle >= -stabilisation_precision:
-        intial_angle = np.random.uniform(-delta, delta)
-    eng.set_param(f'{model}/{mask}', 'init', str(intial_angle), nargout=0)
+
+    # Set random initial angle
+    eng.set_param(f'{model}/{mask}', 'init', str(ang), nargout=0)
 
     print("Running simulation...")
     eng.eval(f"out = sim('{model}');", nargout=0)
@@ -49,8 +75,10 @@ def main(noise = False,
     for time in time_2d:
         time_lst.append(time[0])
 
-    # Plot data
-    plt.plot(time_lst, angle_lst, label = 'Output Signal')
+    stabilises, index = check_stabilization(angle_lst)
+    print(f"{ang} deg: stabilises at {time_lst[index]} s")
+    plt.plot(time_lst, angle_lst, label = f"{ang} deg")
+    
     plt.axhline(y=stabilisation_precision, color='k', linestyle='--', label=f'{stabilisation_precision} rad')
     plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'-{stabilisation_precision} rad')
     plt.xlabel("Time (s)")
@@ -64,4 +92,4 @@ def main(noise = False,
     eng.quit()
 
 if __name__ == '__main__':
-    main(noise=True)
+    main(noise=False)
