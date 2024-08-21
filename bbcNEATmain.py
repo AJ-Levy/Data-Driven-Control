@@ -4,7 +4,8 @@ import dill
 import neat.config
 import numpy as np
 import matplotlib.pyplot as plt
-import bbcNEATactivations as activations
+from matplotlib import font_manager
+import os
 
 def fitness(voltage_lst, time_lst):
     '''
@@ -12,17 +13,19 @@ def fitness(voltage_lst, time_lst):
     1 / (1 + 0.1*avg[goal - measured]^2)
     '''
     dt = 5e-6
-    t_max = 0.6
+    t_max = 0.15
     n_max = t_max/dt
     fitness_sum = 0
-    goal = -70
+    goal = -30
+    error = 5
 
     for k in range(len(voltage_lst)):
-        fitness_sum += (1/10) * (voltage_lst[k] - goal)**2
+        if (goal-error) <= voltage_lst[k] <= (goal+error):
+            fitness_sum += (error - abs(voltage_lst[k]-goal)) / error
+        else:
+            fitness_sum += 0
 
-    fitness_avg = fitness_sum/n_max
-
-    fitness = 1/(1+fitness_avg)
+    fitness = fitness_sum/n_max
     
     print("Fitness score:", round(fitness,4))
     return fitness
@@ -62,19 +65,40 @@ def eval_genomes(genomes, config):
     NEAT eval_genomes method to run the sim 
     and evaluate the fitness of each genome.
     '''
+    fitness_lst = []
     for genome_id, genome in genomes:
         
         # Create and send ANN to controller
+        print(genome)
         net = neat.nn.FeedForwardNetwork.create(genome, config)
         with open('network.dill', 'wb') as f:
             dill.dump(net, f)
-        
-        # Call simulation for the genome (ANN)
-        eng.eval("out = sim('bbcSimNEAT.slx');", nargout=0)
 
+        # # Set random noise seed
+        # noise_seed = str(np.random.randint(1, high=40000))
+        # eng.set_param(f'bbcSimNEAT/Noise', 'seed', f'[{noise_seed}]', nargout=0)
+
+        # # Set random initial Voltage
+        # voltage = str(np.random.randint(20, high=70))
+        # eng.set_param(f'bbcSimNEAT/BBC/V_source_value', 'Amplitude', voltage, nargout=0)
+        # print("Initial Voltage:", voltage)
+        
         # Evaluate and assign fitness
+        eng.eval("out = sim('bbcSimNEAT.slx');", nargout=0)
         voltage_lst, time_lst, pulse_lst, pwm_lst = get_data()
-        genome.fitness = fitness(voltage_lst, time_lst)
+        fitness_score = fitness(voltage_lst, time_lst)
+        genome.fitness = fitness_score
+        fitness_lst.append(fitness_score)
+
+    # Write fitness scores to file
+    if os.path.exists('bbcFitness.dill'):
+        with open('bbcfitness.dill', 'rb') as f:
+            existing_lst = dill.load(f)
+    else:
+        existing_lst = []
+    existing_lst.append(fitness_lst)
+    with open('bbcFitness.dill', 'wb') as f:
+        dill.dump(existing_lst, f)
 
 
 def run(config_file):
@@ -87,11 +111,6 @@ def run(config_file):
     config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
                                 neat.DefaultSpeciesSet, neat.DefaultStagnation,
                                 config_file)
-    
-    # Add my own activation functions
-    activation_functions = activations.get_functions()
-    for name, function in activation_functions:
-        config.genome_config.add_activation(name, function)
 
     # Create the population and add stats reporter.
     pop = neat.Population(config)
@@ -99,16 +118,17 @@ def run(config_file):
     stats = neat.StatisticsReporter()
     pop.add_reporter(stats)
 
-    # Parallel Evaluator
-    #pe = neat.ParallelEvaluator(3, eval_genomes)
-
     # Set up MATLAB engine
     print("Setting up engine...")
     global eng
     eng = matlab.engine.start_matlab()
+    eng.load_system('bbcSimNEAT', nargout=0)
+
+    if os.path.exists('bbcFitness.dill'):
+        os.remove('bbcFitness.dill')
 
     # Run NEAT and return best Genome
-    pop.run(eval_genomes, 10)
+    pop.run(eval_genomes, 15)
     return stats.best_genome()
 
 
@@ -116,54 +136,116 @@ def show_winner(winner):
     '''
     Plot results of winning ANN
     '''
+    goal = -30
     print(winner)
     print("Running winner ANN...")
-
+    # Set fonts for plotting
+    font_path = 'LinLibertine_Rah.ttf'
+    font_manager.fontManager.addfont(font_path)
+    plt.rcParams['font.family'] = 'Linux Libertine'
+    plt.rcParams['font.size'] = 14
+    plt.figure(figsize=(8, 6))
+    stab_time_lst = []
+    
     # Create winner ANN and send to controller
     net = neat.nn.FeedForwardNetwork.create(winner, config)
     with open('network.dill', 'wb') as f:
             dill.dump(net, f)
-    eng.eval("out = sim('bbcSimNEAT.slx');", nargout=0)
-
+    
+    # Run winner and get data
+    model = 'bbcSimNEAT'
+    eng.eval(f"out = sim('{model}.slx');", nargout=0)
     voltage_lst, time_lst, pulse_lst, pwm_lst = get_data()
-    plt.plot (time_lst, voltage_lst)
+
+    # Get stability time
+    stab_time = None
+    for j in range(len(voltage_lst)):
+        if (goal-3) <= voltage_lst[j] <= (goal+3):
+            if stab_time == None:
+                stab_time = time_lst[j]
+        else:
+            stab_time = None
+    stab_time_lst.append(stab_time)
+    
+    # Show average duty cycle
+    on = 0
+    for pwm in pwm_lst:
+        if pwm == 1:
+            on+=1
+    print("Average Duty Cycle:", on/len(pwm_lst))
+
+    # Print stabilization 
+    if None in stab_time_lst:
+        print("Failed to stabalize")
+    else:
+        print("Average stab time:", round(np.mean(stab_time_lst),3), "+/-", round(np.std(stab_time_lst),3))
+        print("Best stab time:", round(min(stab_time_lst),3))
+        print("Worst stab time:", round(max(stab_time_lst),3))
+
+    # Plot
+    plt.plot(time_lst, voltage_lst, label='Output Voltage')
+    plt.axhline(y=(goal-3), linestyle='--', color = 'k', label='$\pm$ 3 steady state error')
+    plt.axhline(y=(goal+3), linestyle='--', color = 'k')
     plt.xlabel("Time (s)")
-    plt.ylabel("Voltage (v)")
+    plt.ylabel("Voltage (V)")
+    plt.legend()
     plt.show()
-    plt.plot (time_lst, pulse_lst)
+    plt.plot(time_lst, pulse_lst)
     plt.xlabel("Time (s)")
-    plt.ylabel("Pulse from controller")
+    plt.ylabel("Controller Duty Cycle (V)")
     plt.show()
-    plt.plot (time_lst, pwm_lst)
-    plt.xlabel("Time (s)")
-    plt.ylabel("pwm output")
+
+
+    ### Fitness ###
+    # Read data from the file
+    with open('bbcFitness.dill', 'rb') as f:
+        fitness_lst = dill.load(f)
+
+    # Plot fitness per generation and average
+    average_fitness = []
+    for x in range(len(fitness_lst)):
+        generation = []
+        for i in range(len(fitness_lst[x])):
+            generation.append(x)
+        plt.scatter(generation, fitness_lst[x], color='darkgrey')
+        average_fitness.append(np.mean(fitness_lst[x]))
+    plt.plot(average_fitness, color='red')
     plt.show()
+
+
     print("Complete.")
 
 
-# def main():
+def main():
+    '''
+    Main method.
+    '''
+    winner = run("bbcConfig.txt")
+    with open('bbcWinner.dill', 'wb') as f:
+            dill.dump(winner, f)
+    show_winner(winner)
+    eng.quit()
+
+if __name__ == '__main__':
+    main()
+
+
+# def show_winner_test():
 #     '''
-#     Main method.
+#     Uncomment this, and comment out main method to run the winner again
 #     '''
-#     winner = run("bbcConfig.txt")
-#     with open('bbcWinnerANN.dill', 'wb') as f:
-#             dill.dump(winner, f)
+#     with open('bbcWinner.dill', 'rb') as f:
+#         winner = dill.load(f)
+
+#     global config
+#     config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
+#                                 neat.DefaultSpeciesSet, neat.DefaultStagnation,
+#                                 "bbcConfig.txt")
+
+#     global eng
+#     eng = matlab.engine.start_matlab()
+#     eng.load_system('bbcSimNEAT', nargout=0)
+
 #     show_winner(winner)
 #     eng.quit()
-
-# if __name__ == '__main__':
-#     main()
-
-def show_winner_test():
-    with open('bbcWinnerANN.dill', 'rb') as f:
-        winner = dill.load(f)
-
-    global config
-    config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
-                                neat.DefaultSpeciesSet, neat.DefaultStagnation,
-                                "bbcConfig.txt")
-
-    global eng
-    eng = matlab.engine.start_matlab()
-    show_winner(winner)
-show_winner_test()
+# show_winner_test()
