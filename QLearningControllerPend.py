@@ -4,7 +4,7 @@ class QLearningController:
 
     def __init__(self, num_actions=4):
         # qtable file
-        self.qfile = 'qtable_10.npy'
+        self.qfile = 'qtable.npy'
         # defining q-table
         self.qtable = np.load(self.qfile)
         # last state and action

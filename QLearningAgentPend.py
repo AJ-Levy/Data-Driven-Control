@@ -122,7 +122,7 @@ class QLearningAgent:
         if self.current_episode == num_episodes:
             self.cum_reward += rew
         else:
-            self.cum_rewards.append(self.cum_reward/self.time_steps)
+            self.cum_rewards.append(self.cum_reward)
             self.cum_reward = rew
             self.current_episode += 1
             self.time_steps = 0

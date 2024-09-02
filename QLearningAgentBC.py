@@ -2,14 +2,14 @@ import numpy as np
 
 class QLearningAgent:
 
-    def __init__(self, num_actions=4):
+    def __init__(self, num_actions=5):
         # files
-        self.qfile = 'qtable_BBC.npy'
-        self.convergence_file = 'qconverge_BBC.txt'
+        self.qfile = 'qtable_BC.npy'
+        self.convergence_file = 'qconverge_BC.txt'
         # number of episodes
-        self.total_episodes = 2000
+        self.total_episodes =1250
         # learning rate
-        self.alpha = 0.4
+        self.alpha = 0.01
         # discount factor
         self.gamma = 0.995
         # epsilon-greedy
@@ -22,12 +22,11 @@ class QLearningAgent:
         # last state and action
         self.last_state = None
         self.last_action = None
-        # duty cycle to be applied
-        self.duty_cycles = [0.1, 0.3, 0.6, 0.9]
+        self.actions = [0.1, 0.3, 0.5, 0.7, 0.9]
         # state parameters
         self.fail_state = -1
         self.num_actions = num_actions
-        self.num_states = 24 # 0 - 17
+        self.num_states =  24 # 0 - 71
         # track convergence by cumulative reward
         self.cum_reward = 0
         self.cum_rewards = []
@@ -36,28 +35,25 @@ class QLearningAgent:
         self.time_steps = 0
         # total time steps
         self.dt = 5e-6
-        self.total_time = 0.6
+        self.total_time = 0.3
         self.total_steps = self.total_time/self.dt
 
     def get_state(self, voltage):
         '''
         Convert continous parameters into discrete states
         '''
-        box = 0
-
-        if (voltage < -120 or voltage > 120):
+        if (voltage < -100 or voltage > 100):
             return self.fail_state
         
         # voltages
-        
-        if voltage < -100: box = 0
-        if voltage < -80: box = 1
-        elif voltage < -60: box = 2
-        elif voltage < -40: box = 3
-        elif voltage < -30: box = 4
-        elif voltage < -23: box = 5
-        elif voltage < -16: box = 6
-        elif voltage < -10: box = 7
+        if voltage < -60: box = 0
+        elif voltage < -40: box = 1
+        elif voltage < -30: box = 2
+        elif voltage < -23: box = 3
+        elif voltage < -16: box = 4
+        elif voltage < -13: box = 5
+        elif voltage < -10: box = 6
+        elif voltage < -8: box = 7
         elif voltage < -5: box = 8
         elif voltage < -3: box = 9
         elif voltage < -1: box = 10
@@ -65,16 +61,16 @@ class QLearningAgent:
         elif voltage < 1: box = 12
         elif voltage < 3: box = 13
         elif voltage < 5: box = 14
-        elif voltage < 10: box = 15
-        elif voltage < 16: box = 16
-        elif voltage < 23: box = 17
-        elif voltage < 30: box = 18
-        elif voltage < 40: box = 19
-        elif voltage < 60: box = 20
-        elif voltage < 80: box = 21
-        elif voltage < 100: box = 22
+        elif voltage < 8: box = 15
+        elif voltage < 10: box = 16
+        elif voltage < 13: box = 17
+        elif voltage < 16: box = 18
+        elif voltage < 23: box = 19
+        elif voltage < 30: box = 20
+        elif voltage < 40: box = 21
+        elif voltage < 60: box = 22
         else: box = 23
-
+    
         return box
             
 
@@ -108,12 +104,14 @@ class QLearningAgent:
         self.qtable[state, action] = q_old + self.alpha * (q_new - q_old)
         
         # collect convergence data
-        rew = reward
+        rew = 0
+        if state > 8 and state < 14:
+            rew = 1.0
 
         if self.current_episode == num_episodes:
             self.cum_reward += rew
         else:
-            self.cum_rewards.append(self.cum_reward/self.time_steps)
+            self.cum_rewards.append(self.cum_reward)
             self.cum_reward = rew
             self.current_episode += 1
             self.time_steps = 0
@@ -127,7 +125,7 @@ class QLearningAgent:
                     f.write(f'{i}#{reward}\n')
 
 
-    def get_output(self, voltage, num_episodes):
+    def get_output(self, voltage, ref_voltage, num_episodes):
         '''
         Applies QLearning algorithm to select an action
         and then return an appropriate output signal
@@ -136,32 +134,40 @@ class QLearningAgent:
 
         state = self.get_state(voltage)
         if self.last_state is not None:
-            reward = self.reward_function(voltage)
+            reward = self.reward_function(voltage, ref_voltage)
             self.update(self.last_state, self.last_action, reward, state, num_episodes)
         action = self.select_action(state, num_episodes)
         self.last_state = state
         self.last_action = action
-        duty_cycle = self.duty_cycles[action] 
+        duty_cycle = self.actions[action]
 
         return duty_cycle
         
-    def reward_function(self, voltage):
+    def reward_function(self, voltage, ref_voltage):
         '''
         simple for now
         '''
-        voltage_penalty = 0.1 * (voltage)**2
-        avg_penalty = voltage_penalty/self.total_steps
-
-        return 1/(1+avg_penalty)
+        
+        '''
+        # First Reward Function
+        return 1/(1 + (voltage)**2)
+        '''
+        
+        # Second Reward Function
+        v_out = abs(voltage - ref_voltage)
+        if (v_out >= 3/4 * ref_voltage) and (v_out <= 5/4 * ref_voltage):
+            return (abs(ref_voltage/4) - abs(voltage))**2
+        return 0
+        
         
         
 # QLearning agent
 agent = QLearningAgent()     
 
-def controller_call(voltage, num_episodes):
+def controller_call(voltage, ref_voltage, num_episodes):
     '''
     Method that MATLAB calls for QLearning
     '''
     global agent
-    duty_cycle = agent.get_output(voltage, num_episodes)
-    return duty_cycle
+    output = agent.get_output(voltage, ref_voltage, num_episodes)
+    return output

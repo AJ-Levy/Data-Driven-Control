@@ -4,6 +4,21 @@ import os
 import numpy as np
 import time
 
+## Setting Font
+
+import matplotlib as mpl
+from matplotlib import font_manager
+
+font_paths = ['/Users/ariellevy/Library/Fonts/LinLibertine_R.otf']  # Update with the path to your Libertine font file
+for font_path in font_paths:
+    font_manager.fontManager.addfont(font_path)
+
+mpl.rcParams['font.family'] = 'serif'
+mpl.rcParams['font.serif'] = ['Linux Libertine O']
+mpl.rcParams['font.size'] = 14
+
+##############################
+
 def viewTable(qtable_file='qtable.npy'):
     ''' 
     View QTable as an array
@@ -86,9 +101,9 @@ def main(trainModel = True,
     eng.load_system(controllerModel, nargout=0)
    
     # show all angles in specified range do acutally stabilise
-    for angle_it in range(-55, 65, 10):
+    for i in range(1):
         # pass in angular offset
-        ang = np.deg2rad(angle_it)
+        ang = 0.6
         eng.set_param(f'{controllerModel}/{cartPoleSubsystem}', 'init', str(ang), nargout=0)
         setNoise(eng, controllerModel, noise)
         eng.eval(f"out = sim('{controllerModel}');", nargout=0)
@@ -117,10 +132,10 @@ def main(trainModel = True,
     plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'± {stabilisation_precision:.2f} rad')
     plt.xlabel("Time (s)")
     plt.ylabel("θ (rad)")
-    plt.xlim(0,max(time_lst))
+    plt.xlim(0,3)
     plt.ylim(-np.pi/2, np.pi/2)
-    plt.title("Angle of pendulum over time")
-    plt.legend(loc = 'upper right')
+    plt.legend(loc = 'upper right', fontsize = "11")
+    plt.savefig('plot.pdf', format='pdf')
     plt.show()
 
     duration = time.time() - start_time
@@ -135,13 +150,13 @@ def main(trainModel = True,
             episodes.append(float(ep))
             rewards.append(float(reward))
 
-    plt.plot(episodes, rewards, color = 'r')
+    plt.plot(episodes, rewards, color = 'blue')
     plt.xlabel('Episodes')
     plt.ylabel('Cumulative Reward')
-    plt.title('Convergence of Q-learning')
+    plt.savefig('pendQConvergence.pdf', format='pdf')
     plt.show()
 
     eng.quit()
 
 if __name__ == '__main__':
-    main(trainModel=True, noise=False)
+    main(trainModel=False, noise=False)

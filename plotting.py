@@ -2,6 +2,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matlab.engine
 
+## Setting Font
+
+import matplotlib as mpl
+from matplotlib import font_manager
+
+font_paths = ['/Users/ariellevy/Library/Fonts/LinLibertine_R.otf']  # Update with the path to your Libertine font file
+for font_path in font_paths:
+    font_manager.fontManager.addfont(font_path)
+
+mpl.rcParams['font.family'] = 'serif'
+mpl.rcParams['font.serif'] = ['Linux Libertine O']
+mpl.rcParams['font.size'] = 14
+
+##############################
+
 # Load convergence data
 controllerModel = 'pendSimQController'
 cartPoleSubsystem = 'Pendulum and Cart'
@@ -69,6 +84,7 @@ def read_data(file_path):
     data = [(float(x), float(y)) for x, y in data]
     return np.array(data)
 
+'''
 # Read data from files
 plt.figure()
 for angle_it in range(-55, 65, 10):
@@ -102,20 +118,114 @@ for angle_it in range(-55, 65, 10):
     #plt.title("Angle of pendulum over time")
     plt.legend(loc = 'upper right')
     plt.show()
+'''
 
+'''
+data_PID = read_data("PID.txt")
+data_Q = read_data("qlearn.txt")
 
+angle_PID, time_PID = data_PID[:, 0], data_PID[:,1]
+angle_Q, time_Q = data_Q[:, 0], data_Q[:,1]
+
+with open("angles.txt", 'r') as file:
+    angle_NEAT = file.readlines()
+angle_NEAT = [float(line.strip()) for line in angle_NEAT]
+
+with open("time.txt", 'r') as file:
+    time_NEAT = file.readlines()
+time_NEAT = [float(line.strip()) for line in time_NEAT]
+
+plt.figure(figsize=(8,6))
+plt.plot(time_PID, angle_PID, label = "PID")
+plt.plot(time_Q, angle_Q, label = "Q-Learning")
+plt.plot(time_NEAT, angle_NEAT, label = "NEAT")
+'''
+'''
+angle_noise_2, time_noise_2 = data_noise_2[:, 0], data_noise_2[:,1]
+angle_noise_3, time_noise_3 = data_noise_3[:, 0], data_noise_2[:,1]
+angle_noise_4, time_noise_4 = data_noise_4[:, 0], data_noise_4[:,1]
+angle_noise_5, time_noise_5 = data_noise_5[:, 0], data_noise_5[:,1]
+
+# Mean Deviaiton due to noise and SNR
+max_dists = []
+P_signal = 0
+n = len(time_no_noise)
+P_noise = 0
+for i in range(n):
+    # deviaiton 
+    d1 = (angle_no_noise[i] - angle_noise_1[i])**2
+    d2 = (angle_no_noise[i] - angle_noise_2[i])**2
+    d3 = (angle_no_noise[i] - angle_noise_3[i])**2
+    d4 = (angle_no_noise[i] - angle_noise_4[i])**2
+    d5 = (angle_no_noise[i] - angle_noise_5[i])**2
+    max_dists.append(np.sqrt(max(d1,d2,d3,d4,d5)))
+
+print(f"Distance from signal: {np.mean(max_dists):.3f} +/- {np.std(max_dists):.4f}")
+
+plt.plot(time_noise_1, angle_noise_1, color = "grey", label = f"Noise", alpha=0.7)
+plt.plot(time_noise_2, angle_noise_2, color = "grey", alpha=0.7)
+plt.plot(time_noise_3, angle_noise_3, color = "grey", alpha=0.7)
+plt.plot(time_noise_4, angle_noise_4, color = "grey", alpha=0.7)
+plt.plot(time_noise_5, angle_noise_5, color = "grey", alpha=0.7)
+plt.plot(time_no_noise, angle_no_noise, color = "blue", label = f"Ideal")
+'''
+
+'''
 stabilisation_precision = 0.05
 plt.axhline(y=stabilisation_precision, color='k', linestyle='--')
 plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'± {stabilisation_precision:.2f} rad')
 plt.xlabel("Time (s)")
-plt.ylabel("θ (rad)")
-plt.xlim(0,5)
-plt.ylim(-np.pi/2, np.pi/2)
+plt.ylabel("Theta (rad)")
+plt.xlim(0,0.5)
+plt.ylim(-1, 1)
 #plt.title("Angle of pendulum over time")
-plt.legend(loc = 'upper right')
+plt.legend()
+plt.savefig('plot.pdf', format='pdf')
 plt.show()
+'''
 
-stab_times = [0.676, 0.532, 0.38, 0.222, 0.166, 0.285, 0.131, 0.39, 0.46]
-print(f"Min Time: {min(stab_times):.2f} s")
-print(f"Avg Time: {np.mean(stab_times):.2f} +/- {np.sqrt(np.var(stab_times)):.2f} s")
-print(f"Max Time: {max(stab_times):.2f}:.2f s")
+data = {
+    'PID': {'mean': 0.28, 'std_dev': 0.35, 'min_val': 0.02, 'max_val': 0.78},
+    'Q-Learning': {'mean': 0.36, 'std_dev': 15, 'min_val': 40, 'max_val': 90},
+    'NEAT': {'mean': 55, 'std_dev': 12, 'min_val': 35, 'max_val': 75},
+}
+
+
+means = np.array([26.1, 3.9, 0.0])
+mins = np.array([25.5, 3.4, 0.0])
+maxs = np.array([26.7, 4.7, 0.0])
+stds = np.array([0.4, 0.5, 0.0])
+
+x = np.array([1,2,3])
+
+plt.errorbar(x, means, yerr=stds, fmt='o', color='darkorange', ecolor = "orange", label='Mean ± SD')
+
+# Plot the min and max values as filled areas
+for i in range(len(x)):
+    plt.fill_between([x[i] - 0.01, x[i] + 0.01], mins[i], maxs[i], color='lightgrey', alpha=0.5)
+
+# Plot min and max values
+plt.scatter(x, maxs, color='teal', marker='o', label='Max.', zorder=5)
+plt.scatter(x, mins, color='purple', marker='o', label='Min.', zorder=5)
+
+for i in range(len(x)):
+    offset = 0.1  # Offset to move text to the right
+    # Annotate mean
+    plt.text(x[i] + offset, means[i], f'{means[i]:.2f} ± {stds[i]:.2f}', ha='left', va='center', color='k', fontsize=12)
+    
+    # Annotate min
+    plt.text(x[i] + offset, mins[i], f'{mins[i]:.2f}', ha='left', va='center', color='k', fontsize=12)
+    
+    # Annotate max
+    plt.text(x[i] + offset, maxs[i], f'{maxs[i]:.2f}', ha='left', va='center', color='k', fontsize=12)
+
+plt.ylim(0,30)
+plt.ylabel("Stabilisation Time (ms)")
+plt.xticks([0, 1, 2, 3, 4], ['','PID', 'Q-Learning', 'NEAT', ''])
+plt.xlabel("Control Methods")
+plt.legend()
+plt.savefig("plot.pdf", format="pdf")
+
+
+# Show the plot
+plt.show()

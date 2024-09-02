@@ -4,7 +4,37 @@ import os
 import numpy as np
 import time
 
-def viewTable(qtable_file='qtable_BBC.npy'):
+## Setting Font
+
+import matplotlib as mpl
+from matplotlib import font_manager
+
+font_paths = ['/Users/ariellevy/Library/Fonts/LinLibertine_R.otf']  # Update with the path to your Libertine font file
+for font_path in font_paths:
+    font_manager.fontManager.addfont(font_path)
+
+mpl.rcParams['font.family'] = 'serif'
+mpl.rcParams['font.serif'] = ['Linux Libertine O']
+mpl.rcParams['font.size'] = 14
+
+
+def check_stabilization(signal, val, margin=1.0, required_iterations=1000):
+    signal = np.array(signal)
+    n = len(signal)
+    
+    if required_iterations > n:
+        return False, -1
+    
+    for i in range(n - required_iterations + 1):
+        # Check if all values in the range are within the margin of the specified value
+        if np.all((signal[i:i + required_iterations] <= val + margin) & (signal[i:i + required_iterations] >= val - margin)):
+            return True, i
+    
+    return False, -1
+
+##############################
+
+def viewTable(qtable_file='qtable_BC.npy'):
     ''' 
     View QTable as an array
     '''
@@ -15,7 +45,7 @@ def viewTable(qtable_file='qtable_BBC.npy'):
     print(qtable)
 
 # reset Q table
-def reset(num_states=24, num_actions=4, qtable_file='qtable_BBC.npy'):
+def reset(num_states=24, num_actions=5, qtable_file='qtable_BC.npy'):
     '''
     Reset QTable to 2D array of zeros of size
     num_states x num_actions.
@@ -23,7 +53,15 @@ def reset(num_states=24, num_actions=4, qtable_file='qtable_BBC.npy'):
     qtable = np.zeros((num_states, num_actions))
     np.save(qtable_file, qtable)
 
-def train(eng, model, mask, convergence_data_file, source_voltage, desired_voltage, num_episodes=2000, count=0):
+def select_reference_voltage(v_ref, variation = 0.05):
+    '''
+    Randomly returns one of the reference voltage
+    options for training.
+    '''
+    variation_range = v_ref * variation
+    return v_ref + np.random.uniform(-variation_range, variation_range)
+
+def train(eng, model, mask, convergence_data_file, source_voltage, v_ref, num_episodes=1250, count=0):
     '''
     Train QLearning Agent
     '''
@@ -36,7 +74,7 @@ def train(eng, model, mask, convergence_data_file, source_voltage, desired_volta
         # pass in current episode
         eng.set_param(f'{model}/numEpisodes', 'Value', str(episode), nargout=0)
         # pass in initial parameters (source voltage and reference voltage)
-        eng.set_param(f'{model}/finalVoltage', 'Value', str(desired_voltage), nargout=0)
+        eng.set_param(f'{model}/finalVoltage', 'Value', str(select_reference_voltage(v_ref)), nargout=0)
         eng.set_param(f'{model}/input_voltage', 'Amplitude', str(source_voltage), nargout=0)
 
         eng.sim(model)
@@ -46,7 +84,7 @@ def train(eng, model, mask, convergence_data_file, source_voltage, desired_volta
 
 def setNoise(eng, model, noise):
     if noise:
-        eng.set_param(f'{model}/Noise', 'Cov', str([0.00001]), nargout=0)
+        eng.set_param(f'{model}/Noise', 'Cov', str([0.000000125]), nargout=0)
         random_seed = np.random.randint(1, 100000)
         eng.set_param(f'{model}/Noise', 'seed', str([random_seed]), nargout=0)
     else:
@@ -54,13 +92,13 @@ def setNoise(eng, model, noise):
 
 def main(trainModel = True, 
          noise = False,
-         trainingModel = 'QBuckTraining', 
-         controllerModel = 'QBuckController',
+         trainingModel = 'bcSimQTraining', 
+         controllerModel = 'bcSimQController',
          mask = 'BBC',
-         convergence_data_file = 'qconverge_BBC.txt',
-         stabilisation_precision = 0.05,
+         convergence_data_file = 'qconverge_BC.txt',
+         stabilisation_precision = 0.5,
         source_voltage = 48,
-        desired_voltage = 18):
+        v_ref = 30):
 
     global time
 
@@ -71,19 +109,21 @@ def main(trainModel = True,
     start_time = time.time()
     if trainModel:
         print("Training model...")
-        train(eng, trainingModel, mask, convergence_data_file, source_voltage, desired_voltage)
+        train(eng, trainingModel, mask, convergence_data_file, source_voltage, v_ref)
     print("Running simulation...")
     eng.load_system(controllerModel, nargout=0)
+    
+    viewTable()
+
+    #for v in range(-5, 6):
+    desired_voltage = v_ref 
     # uncomment once noise is added to sim
     #setNoise(eng, controllerModel, noise)
-
     # pass in initial parameters (source voltage and reference voltage)
     eng.set_param(f'{controllerModel}/finalVoltage', 'Value', str(desired_voltage), nargout=0)
     eng.set_param(f'{controllerModel}/input_voltage', 'Amplitude', str(source_voltage), nargout=0)
     eng.eval(f"out = sim('{controllerModel}');", nargout=0)
-   
 
-    viewTable()
     ## Data Presentation
     # Get voltages
     voltage_2d = eng.eval("voltage")
@@ -97,14 +137,20 @@ def main(trainModel = True,
     for t in time_2d:
         time_lst.append(t[0])
 
+    with open(f"rewardfn2.txt", "w") as f:
+        for i in range(len(time_lst)):
+            f.write(f"{voltage_lst[i]}#{time_lst[i]}\n")
     # Plot data
-    plt.plot(time_lst, voltage_lst, label = "Output Signal")
+    stabilise, index = check_stabilization(voltage_lst, desired_voltage)
+    print(f"{desired_voltage} V stablises in {time_lst[index]*1000:.3f} ms")
+    plt.plot(time_lst, voltage_lst, label = f"Ref: {desired_voltage} V")
         
     # configure plot
+    plt.axhline(y=desired_voltage + stabilisation_precision, color='k', linestyle='--')
+    plt.axhline(y=desired_voltage - stabilisation_precision, color='k', linestyle='--', label=f'± {stabilisation_precision:.1f} rad')
     plt.xlabel("Time (s)")
     plt.ylabel("Voltage (V)")
-    plt.xlim(0,max(time_lst))
-    plt.title("Voltage Progression over time")
+    plt.xlim(0,0.1)
     plt.legend(loc = 'upper right')
     plt.show()
 
@@ -120,12 +166,13 @@ def main(trainModel = True,
             episodes.append(float(ep))
             rewards.append(float(reward))
 
-    plt.plot(episodes, rewards, color = 'r')
+    plt.plot(episodes, rewards, color = 'darkorange')
     plt.plot()
     plt.xlabel('Episodes')
-    plt.ylabel('Cumulative Reward per Time Step')
-    plt.title('Convergence of Q-learning')
+    plt.ylabel('Cumulative Reward')
+    plt.savefig('buckQConvergence.pdf', format = "pdf")
     plt.show()
+    
 
     eng.quit()
 
