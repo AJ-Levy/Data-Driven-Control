@@ -148,17 +148,17 @@ class QLearningAgent:
         simple for now
         '''
         
-        '''
+        
         # First Reward Function
         return 1/(1 + (voltage)**2)
-        '''
         
-        # Second Reward Function
+        '''
+        # Second (worse-performing) Reward Function
         v_out = abs(voltage - ref_voltage)
         if (v_out >= 3/4 * ref_voltage) and (v_out <= 5/4 * ref_voltage):
             return (abs(ref_voltage/4) - abs(voltage))**2
         return 0
-        
+        '''
         
         
 # QLearning agent
