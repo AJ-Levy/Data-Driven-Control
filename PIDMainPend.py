@@ -2,7 +2,7 @@ import matlab.engine
 import matplotlib.pyplot as plt
 import numpy as np
 
-def check_stabilization(signal, margin=0.05, required_iterations=2000):
+def check_stabilization(signal, margin=0.05, required_iterations=1000):
     """
     Check if the signal has stabilized around zero.
     
@@ -33,7 +33,7 @@ def setNoise(eng, model, noise):
     Sets appropriate amount of noise if required
     '''
     if noise:
-        eng.set_param(f'{model}/Noise', 'Cov', str([0.00001]), nargout=0)
+        eng.set_param(f'{model}/Noise', 'Cov', str([0.000006]), nargout=0)
         random_seed = np.random.randint(1, 100000)
         eng.set_param(f'{model}/Noise', 'seed', str([random_seed]), nargout=0)
     else:
@@ -52,33 +52,37 @@ def main(noise = False,
     eng = matlab.engine.start_matlab()
 
     eng.load_system(model, nargout=0)
-
-
-    setNoise(eng, model, noise)
-
-    # Set random initial angle
-    eng.set_param(f'{model}/{mask}', 'init', str(ang), nargout=0)
-
     print("Running simulation...")
-    eng.eval(f"out = sim('{model}');", nargout=0)
-    print("Simulation complete")
 
-    # Get angles
-    angle_2d = eng.eval("out.angle")
-    angle_lst = []
-    for angle in angle_2d:
-        angle_lst.append(angle[0])
+    for i in [-1.0, -0.8, -0.6, 0.6, 0.8, 1.0]:
+        setNoise(eng, model, noise)
+        ang = i
+        # Set random initial angle
+        eng.set_param(f'{model}/{mask}', 'init', str(ang), nargout=0)
 
-    # Get time
-    time_2d = eng.eval("out.time")
-    time_lst = []
-    for time in time_2d:
-        time_lst.append(time[0])
+        
+        eng.eval(f"out = sim('{model}');", nargout=0)
+        print("Simulation complete")
 
-    stabilises, index = check_stabilization(angle_lst)
-    print(f"{ang} deg: stabilises at {time_lst[index]} s")
-    plt.plot(time_lst, angle_lst, label = f"{ang} deg")
-    
+        # Get angles
+        angle_2d = eng.eval("out.angle")
+        angle_lst = []
+        for angle in angle_2d:
+            angle_lst.append(angle[0])
+
+        # Get time
+        time_2d = eng.eval("out.time")
+        time_lst = []
+        for time in time_2d:
+            time_lst.append(time[0])
+
+        stabilises, index = check_stabilization(angle_lst)
+        if stabilises:
+            print(f"{ang}: stabilises at {time_lst[index]} s")
+        else:
+            print(f"{ang} doesn't stabilise")
+        plt.plot(time_lst, angle_lst, label = f"{ang} deg")
+        
     plt.axhline(y=stabilisation_precision, color='k', linestyle='--', label=f'{stabilisation_precision} rad')
     plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'-{stabilisation_precision} rad')
     plt.xlabel("Time (s)")
@@ -92,4 +96,4 @@ def main(noise = False,
     eng.quit()
 
 if __name__ == '__main__':
-    main(noise=False)
+    main(noise=True)
