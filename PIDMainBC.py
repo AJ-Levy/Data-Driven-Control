@@ -57,10 +57,7 @@ def main(noise = False,
     plt.axhline(y=-stabilisation_precision + (desired_voltage), color='k', linestyle='--', label=f'{-stabilisation_precision + (desired_voltage)} V')
     plt.xlabel("Time (s)")
     plt.ylabel("Voltage (V)")
-    #plt.title("Voltage Progression over Time")
     plt.xlim(0,max(time_lst))
-    #view_range = 0.2*desired_voltage
-    #plt.ylim(desired_voltage - view_range,desired_voltage + view_range)
     plt.legend()
     plt.show()
 

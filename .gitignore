@@ -6,3 +6,4 @@ slprj/
 *.pkl
 *.png
 *.*a
+.DS_Store
