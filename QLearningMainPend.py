@@ -4,21 +4,6 @@ import os
 import numpy as np
 import time
 
-## Setting Font
-
-import matplotlib as mpl
-from matplotlib import font_manager
-
-font_paths = ['/Users/ariellevy/Library/Fonts/LinLibertine_R.otf']  # Update with the path to your Libertine font file
-for font_path in font_paths:
-    font_manager.fontManager.addfont(font_path)
-
-mpl.rcParams['font.family'] = 'serif'
-mpl.rcParams['font.serif'] = ['Linux Libertine O']
-mpl.rcParams['font.size'] = 14
-
-##############################
-
 def viewTable(qtable_file='qtable.npy'):
     ''' 
     View QTable as an array
@@ -92,11 +77,9 @@ def main(trainModel = True,
     eng = matlab.engine.start_matlab()
     eng.load_system(trainingModel, nargout=0)
     start_time = time.time()
-    ## Comment Out Once Model is Trained ##
     if trainModel:
         print("Training model...")
         train(eng, trainingModel, cartPoleSubsystem, convergence_data_file)
-    #######################################
     print("Running simulation...")
     eng.load_system(controllerModel, nargout=0)
    

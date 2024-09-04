@@ -6,3 +6,4 @@ slprj/
 *.pkl
 test.py
 *.pdf
+plotting.py
