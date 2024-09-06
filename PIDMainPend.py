@@ -2,35 +2,14 @@ import matlab.engine
 import matplotlib.pyplot as plt
 import numpy as np
 
-def check_stabilization(signal, margin=0.05, required_iterations=1000):
-    """
-    Check if the signal has stabilized around zero.
-    
-    Args:
-    signal (array-like): The signal data to check.
-    margin (float): The margin of error around zero to consider as stabilized.
-    required_iterations (int): The number of consecutive iterations within margin to consider as stabilized.
-    
-    Returns:
-    bool: True if the signal is stabilized, False otherwise.
-    int: The index at which stabilization starts, or -1 if not stabilized.
-    """
-    signal = np.array(signal)
-    n = len(signal)
-    
-    if required_iterations > n:
-        return False, -1
-    
-    for i in range(n - required_iterations + 1):
-        # Check if all values in the range are within the margin
-        if np.all(np.abs(signal[i:i + required_iterations]) < margin):
-            return True, i
-    
-    return False, -1
-
 def setNoise(eng, model, noise):
     '''
-    Sets appropriate amount of noise if required
+    Sets amount of noise to be supplied to the state variables.
+
+    Args:
+        eng (MatlabEngine Object): The instance of Matlab currently running.
+        model (str): Name of the Simulink model in use.
+        noise (bool): Whether noise should be supplied or not.
     '''
     if noise:
         eng.set_param(f'{model}/Noise', 'Cov', str([0.000006]), nargout=0)
@@ -43,46 +22,44 @@ def main(noise = False,
          model = 'pendSimPID',
          mask = 'Pendulum and Cart',
          stabilisation_precision = 0.05,
-         delta = np.pi/3):
+         initial_angle = np.pi/3):
     '''
-    Main method to set up MATLAB, simulink,
-    and handle data aquisition/plotting.
+    Method to set up MATLAB, Simulink, and handle data aquisition/plotting.
+
+    Args:
+        noise (bool): Whether noise should be supplied or not.
+        model (str): Name of the Simulink model in use.
+        mask (str): Name of the model block in use.
+        stabilisation_precision (float): Magnitude of error bounds around the reference voltage.
+        initial_angle (float): Angle (in radians) from which the pendulum stabilises.
     '''
     print("Setting up engine...")
     eng = matlab.engine.start_matlab()
-
     eng.load_system(model, nargout=0)
+
+    # Setting model parameters
+    eng.set_param(f'{model}/{mask}', 'init', str(initial_angle), nargout=0)
+    
     print("Running simulation...")
+    eng.eval(f"out = sim('{model}');", nargout=0)
+    print("Simulation complete")
 
-    for i in [-1.0, -0.8, -0.6, 0.6, 0.8, 1.0]:
-        setNoise(eng, model, noise)
-        ang = i
-        # Set random initial angle
-        eng.set_param(f'{model}/{mask}', 'init', str(ang), nargout=0)
+    # Get angles
+    angle_2d = eng.eval("out.angle")
+    angle_lst = []
+    for angle in angle_2d:
+        angle_lst.append(angle[0])
 
-        
-        eng.eval(f"out = sim('{model}');", nargout=0)
-        print("Simulation complete")
+    # Get time
+    time_2d = eng.eval("out.time")
+    time_lst = []
+    for time in time_2d:
+        time_lst.append(time[0])
 
-        # Get angles
-        angle_2d = eng.eval("out.angle")
-        angle_lst = []
-        for angle in angle_2d:
-            angle_lst.append(angle[0])
+    eng.quit()
 
-        # Get time
-        time_2d = eng.eval("out.time")
-        time_lst = []
-        for time in time_2d:
-            time_lst.append(time[0])
-
-        stabilises, index = check_stabilization(angle_lst)
-        if stabilises:
-            print(f"{ang}: stabilises at {time_lst[index]} s")
-        else:
-            print(f"{ang} doesn't stabilise")
-        plt.plot(time_lst, angle_lst, label = f"{ang} deg")
-        
+    # Plotting acquired data
+    plt.plot(time_lst, angle_lst, label = f"{initial_angle} rad")
     plt.axhline(y=stabilisation_precision, color='k', linestyle='--', label=f'{stabilisation_precision} rad')
     plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'-{stabilisation_precision} rad')
     plt.xlabel("Time (s)")
@@ -93,7 +70,7 @@ def main(noise = False,
     plt.legend()
     plt.show()
 
-    eng.quit()
+    
 
 if __name__ == '__main__':
     main(noise=True)

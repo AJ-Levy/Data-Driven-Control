@@ -4,7 +4,12 @@ import matplotlib.pyplot as plt
 
 def setNoise(eng, model, noise):
     '''
-    Sets appropriate amount of noise if required
+    Sets amount of noise to be supplied to the state variables.
+
+    Args:
+        eng (MatlabEngine Object): The instance of Matlab currently running.
+        model (str): Name of the Simulink model in use.
+        noise (bool): Whether noise should be supplied or not.
     '''
     if noise:
         eng.set_param(f'{model}/Noise', 'Cov', str([0.0000008]), nargout=0)
@@ -14,23 +19,27 @@ def setNoise(eng, model, noise):
         eng.set_param(f'{model}/Noise', 'Cov', str([0]), nargout=0)
 
 def main(noise = False,
-         desired_voltage = 30,
-         source_voltage = 48,
+         desired_voltage = 30.0,
+         source_voltage = 48.0,
          model = 'bcSimPID',
          stabilisation_precision = 0.5):
     '''
-    Main method to set up MATLAB, simulink,
-    and handle data aquisition/plotting.
+    Method to set up MATLAB, Simulink, and handle data aquisition/plotting.
+
+    Args:
+        noise (bool): Whether noise should be supplied or not.
+        desired_voltage (float): Desired reference voltage.
+        source_voltage (float): Source/Input voltage.
+        model (str): Name of the Simulink model in use.
+        stabilisation_precision (float): Magnitude of error bounds around the reference voltage.
     '''
     print("Setting up engine...")
     eng = matlab.engine.start_matlab()
-
     eng.load_system(model, nargout=0)
     
+    # Setting model parameters
     setNoise(eng, model, noise)
     eng.set_param(f'{model}/finalVoltage', 'Value', str(desired_voltage), nargout=0)
-        
-    # Set initial voltage
     eng.set_param(f'{model}/input_voltage', 'Amplitude', str(source_voltage), nargout=0)
 
     print("Running simulation...")
@@ -43,16 +52,16 @@ def main(noise = False,
     for v in voltage_2d:
         voltage_lst.append(v[0])
 
-    # Get time
+    # Get times
     time_2d = eng.eval("time")
     time_lst = []
     for time in time_2d:
         time_lst.append(time[0])
 
-    plt.plot(time_lst, voltage_lst, label = f'{desired_voltage} V')
-    
     eng.quit()
 
+    # Plotting acquired data
+    plt.plot(time_lst, voltage_lst, label = f'{desired_voltage} V')
     plt.axhline(y=stabilisation_precision + (desired_voltage), color='k', linestyle='--', label=f'{stabilisation_precision + (desired_voltage)} V')
     plt.axhline(y=-stabilisation_precision + (desired_voltage), color='k', linestyle='--', label=f'{-stabilisation_precision + (desired_voltage)} V')
     plt.xlabel("Time (s)")
@@ -63,4 +72,4 @@ def main(noise = False,
 
 
 if __name__ == '__main__':
-    main(noise=True)
+    main(noise=False)
