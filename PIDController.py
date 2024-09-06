@@ -1,6 +1,6 @@
 class PIDController:
     '''
-    A class that implements simple a Proportional-Integral-Derivative (PID) controller.
+    A class that implements a simple Proportional-Integral-Derivative (PID) controller.
     
     Attributes:
         Kp (float): Proportional gain coefficient.
@@ -13,7 +13,7 @@ class PIDController:
 
     def __init__(self, Kp, Ki, Kd, dt):
         '''
-        Initialises the PID controller with the specified gain coefficients and step siz.
+        Initialises the PID controller with the specified gain coefficients and step size.
 
         Args:
             Kp (float): Proportional gain.
@@ -37,7 +37,7 @@ class PIDController:
             measurement (float): Current value.
 
         Returns:
-            float: Output force.
+            float: Output signal.
         '''
 
         error = measurement - setpoint
@@ -66,7 +66,7 @@ def controller_call(setpoint, measurement):
         measurement (float): Current value.
 
     Returns:
-        float: Output force.
+        float: Output signal.
     '''
     force = pid_controller.update(setpoint, measurement)
     return force
