@@ -71,4 +71,4 @@ def main(noise = False,
     plt.show()
 
 if __name__ == '__main__':
-    main(noise=True)
+    main(noise=False)
