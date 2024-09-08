@@ -11,11 +11,14 @@ A brief description of what the project does and its purpose. This project aims 
 ## Installation
 
 1. Clone the repository:
-    ```bash git clone https://github.com/username/my-awesome-project.git```
-2. Navigate to the project directory:
-    ```bash cd my-awesome-project
+    ```bash
+   git clone https://github.com/username/my-awesome-project.git
     ```
-3. Install the necessary dependencies:
+3. Navigate to the project directory:
+    ```bash
+    cd my-awesome-project
+    ```
+4. Install the necessary dependencies:
     ```bash
     pip install -r requirements.txt
     ```
