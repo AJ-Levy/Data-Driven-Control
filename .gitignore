@@ -7,3 +7,4 @@ slprj/
 test.py
 *.pdf
 plotting.py
+.DS_Store
