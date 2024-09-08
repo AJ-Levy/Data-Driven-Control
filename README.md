@@ -12,11 +12,12 @@ A brief description of what the project does and its purpose. This project aims 
 
 1. Clone the repository:
     ```bash
-   git clone https://github.com/username/my-awesome-project.git
+   git clone https://github.com/AJ-Levy/Data-Driven-Control.git
+    
     ```
 3. Navigate to the project directory:
     ```bash
-    cd my-awesome-project
+    cd Data-Driven-Control
     ```
 4. Install the necessary dependencies:
     ```bash
