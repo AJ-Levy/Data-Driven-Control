@@ -30,7 +30,7 @@ def main(noise = False,
         noise (bool): Whether noise should be supplied or not.
         model (str): Name of the Simulink model in use.
         mask (str): Name of the model block in use.
-        stabilisation_precision (float): Magnitude of error bounds around the reference voltage.
+        stabilisation_precision (float): Magnitude of error bounds around 0 rad.
         initial_angle (float): Angle (in radians) from which the pendulum stabilises.
     '''
     print("Setting up engine...")
