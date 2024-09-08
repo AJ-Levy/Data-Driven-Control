@@ -82,6 +82,8 @@ def train(eng, model, source_voltage, v_ref, total_episodes=1250, count=0):
         eng.sim(model)
         count += 1
         updateProgressBar(count, total_episodes)
+    
+    print()
 
 def setNoise(eng, model, noise):
     '''
