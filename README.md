@@ -12,7 +12,7 @@ A brief description of what the project does and its purpose. This project aims 
 
 1. Ensure that MATLAB is installed on your system. It can be downloaded from [MathWorks](https://www.mathworks.com/products/matlab.html).
 
-2. Clone the repository:
+2. Clone this repository:
     ```bash
    git clone https://github.com/AJ-Levy/Data-Driven-Control.git
     ```
