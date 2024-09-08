@@ -100,7 +100,7 @@ def main(trainModel = True,
         trainingModel (str): Name of the Simulink model used for training.
         controllerModel (str): Name of the Simulink model used for controlling.
         cartPoleSubsystem (str): Name of the model block of the system in use.
-        stabilisation_precision (float): Magnitude of error bounds around the reference voltage.
+        stabilisation_precision (float): Magnitude of error bounds around 0 rad.
     '''
     global time
 
@@ -134,7 +134,7 @@ def main(trainModel = True,
     for a in angle_2d:
         angle_lst.append(a[0])
 
-    # Get time
+    # Get times
     time_2d = eng.eval("out.time")
     time_lst = []
     for t in time_2d:

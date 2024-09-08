@@ -6,53 +6,77 @@ import time
 
 def viewTable(qtable_file='qtable_BC.npy'):
     ''' 
-    View QTable as an array
+    Displays the Q-Table as an array.
+
+    Args:
+        qtable_file (str): Name of file where the Q-Table is stored.
     '''
     qtable = np.load(qtable_file)
-
-    # Print the Q-table
-    print("Q-table:")
     print(qtable)
 
 # reset Q table
 def reset(num_states=24, num_actions=5, qtable_file='qtable_BC.npy'):
     '''
-    Reset QTable to 2D array of zeros of size
-    num_states x num_actions.
+    Resets the Q-Table to 2D array of zeros of size num_states x num_actions.
+
+    Args:
+        num_actions (int): Number of actions available.
+        num_states (int): Number of states available.
+        qtable_file (str): Name of file where the Q-Table is stored.
     '''
     qtable = np.zeros((num_states, num_actions))
     np.save(qtable_file, qtable)
 
 def select_reference_voltage(v_ref, variation = 0.05):
     '''
-    Randomly returns one of the reference voltage
-    options for training.
+    Generates a random desired voltage about the reference voltage.
+    The result lies in the range [(1 - variation) * v_ref, (1 + variation) * v_ref) radians.
+
+    Args:
+        v_ref (float): Desired/reference voltage. 
+        variation (float): Percentage applied to the reference voltage. 
+
+    Returns:
+        float: Variated reference voltage.
     '''
     variation_range = v_ref * variation
     return v_ref + np.random.uniform(-variation_range, variation_range)
 
-def train(eng, model, mask, convergence_data_file, source_voltage, v_ref, num_episodes=1250, count=0):
+def train(eng, model, source_voltage, v_ref, total_episodes=1250, count=0):
     '''
-    Train QLearning Agent
-    '''
-    # clean up algorithm convergence file
-    if os.path.exists(convergence_data_file):
-        os.remove(convergence_data_file)
+    Trains the Q-Learning Agent from scratch to populate an optimal Q-Table.
 
+    Args:
+        eng (MatlabEngine Object): The instance of Matlab currently running.
+        model (str): Name of the Simulink model in use.
+        source_voltage (float): Input voltage.
+        v_ref (float): Desired/reference voltage. 
+        total_episodes (int): Total number of episodes to be completed.
+        count (int): The current episode number.
+    '''
     reset()
-    for episode in range(1, num_episodes+1):
-        # pass in current episode
+    for episode in range(1, total_episodes+1):
+        
+        # Setting training model parameters
         eng.set_param(f'{model}/numEpisodes', 'Value', str(episode), nargout=0)
-        # pass in initial parameters (source voltage and reference voltage)
         eng.set_param(f'{model}/finalVoltage', 'Value', str(select_reference_voltage(v_ref)), nargout=0)
         eng.set_param(f'{model}/input_voltage', 'Amplitude', str(source_voltage), nargout=0)
 
+        # Simulating episodes
         eng.sim(model)
-        if episode % (num_episodes//10) == 0:
+        if episode % (total_episodes//10) == 0:
             count += 1 
             print(f"{count*10}%")
 
 def setNoise(eng, model, noise):
+    '''
+    Sets amount of noise to be supplied to the state variables.
+
+    Args:
+        eng (MatlabEngine Object): The instance of Matlab currently running.
+        model (str): Name of the Simulink model in use.
+        noise (bool): Whether noise should be supplied or not.
+    '''
     if noise:
         eng.set_param(f'{model}/Noise', 'Cov', str([0.0000004]), nargout=0)
         random_seed = np.random.randint(1, 100000)
@@ -64,49 +88,62 @@ def main(trainModel = True,
          noise = False,
          trainingModel = 'bcSimQTraining', 
          controllerModel = 'bcSimQController',
-         mask = 'BBC',
-         convergence_data_file = 'qconverge_BC.txt',
          stabilisation_precision = 0.5,
-         source_voltage = 48,
-         desired_voltage = 30):
+         source_voltage = 48.0,
+         desired_voltage = 30.0):
+    '''
+    Method to set up MATLAB, Simulink, and handle data aquisition/plotting.
 
+    Args:
+        trainModel (bool): Whether the model should be trained or not.
+        noise (bool): Whether noise should be supplied or not.
+        trainingModel (str): Name of the Simulink model used for training.
+        controllerModel (str): Name of the Simulink model used for controlling.
+        stabilisation_precision (float): Magnitude of error bounds around the reference voltage.
+        source_voltage (float): Input voltage.
+        desired_voltage (float): Desired/reference voltage.
+    '''
     global time
 
-    # Run sim
     print("Setting up engine...")
     eng = matlab.engine.start_matlab()
     eng.load_system(trainingModel, nargout=0)
     start_time = time.time()
+
+    # Training model if specified
     if trainModel:
         print("Training model...")
-        train(eng, trainingModel, mask, convergence_data_file, source_voltage, v_ref)
+        train(eng, trainingModel, source_voltage, desired_voltage)
+    
     print("Running simulation...")
     eng.load_system(controllerModel, nargout=0)
-    
-    viewTable()
-    
+
+    # Setting controller model parameters
     setNoise(eng, controllerModel, noise)
-    # pass in initial parameters (source voltage and reference voltage)
     eng.set_param(f'{controllerModel}/finalVoltage', 'Value', str(desired_voltage), nargout=0)
     eng.set_param(f'{controllerModel}/input_voltage', 'Amplitude', str(source_voltage), nargout=0)
     eng.eval(f"out = sim('{controllerModel}');", nargout=0)
+    
+    # Showing Q-Table
+    print("Final Q-Table")
+    viewTable()
 
-    ## Data Presentation
     # Get voltages
     voltage_2d = eng.eval("voltage")
     voltage_lst = []
     for v in voltage_2d:
         voltage_lst.append(v[0])
 
-    # Get time
+    # Get times
     time_2d = eng.eval("time")
     time_lst = []
     for t in time_2d:
         time_lst.append(t[0])
+
+    eng.quit()    
     
+    # Plotting acquired data
     plt.plot(time_lst, voltage_lst, label = f"Ref: {desired_voltage} V")
-        
-    # configure plot
     plt.axhline(y=desired_voltage + stabilisation_precision, color='k', linestyle='--')
     plt.axhline(y=desired_voltage - stabilisation_precision, color='k', linestyle='--', label=f'± {stabilisation_precision:.1f} rad')
     plt.xlabel("Time (s)")
@@ -117,25 +154,6 @@ def main(trainModel = True,
 
     duration = time.time() - start_time
     print(f"Simulation complete in {duration:.1f} secs")
-
-    # Load convergence data
-    episodes = []
-    rewards = []
-    with open(convergence_data_file, 'r') as f:
-        for line in f:
-            ep, reward = line.strip().split('#')
-            episodes.append(float(ep))
-            rewards.append(float(reward))
-
-    plt.plot(episodes, rewards, color = 'darkorange')
-    plt.plot()
-    plt.xlabel('Episodes')
-    plt.ylabel('Cumulative Reward')
-    plt.savefig('buckQConvergence.pdf', format = "pdf")
-    plt.show()
     
-
-    eng.quit()
-
 if __name__ == '__main__':
     main(trainModel=True, noise=False)
