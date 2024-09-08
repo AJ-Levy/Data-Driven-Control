@@ -1,35 +1,56 @@
 import numpy as np
 
 class QLearningController:
+    '''
+    A class that implements a (trained) Q-Learning Controller for an inverted pendulum system.
+    
+    Attributes:
+        qfile (str): Name of file where the Q-Table is stored.
+        qtable (numpy.ndarray): The Agent's Q-Table.
+        last_action (int): Previous action taken.
+        forces (list): Possible actions (forces) that can be taken be the controller.
+        fail_state (int): An extremely undesireable state.
+        num_actions (int): Number of actions available.
+        num_states (int): Number of states available.
+    '''
 
-    def __init__(self, num_actions=4):
-        # qtable file
+    def __init__(self):
+        '''
+        Initialises the Q-Learning Controller for use.
+        '''
         self.qfile = 'qtable.npy'
-        # defining q-table
         self.qtable = np.load(self.qfile)
-        # last state and action
+
         self.last_action = None
-        # forces to be applied to cart
+
         self.forces = [10.0, 30.0, -10.0, -30.0]
-        # state parameters
-        self.num_actions = num_actions
-        self.num_states = 144 # 0 - 143
+
         self.fail_state = -1
+        self.num_actions = len(self.forces)
+        self.num_states = 144 # 0 - 143
+        
 
     def get_state(self, theta, theta_dot):
         '''
-        Convert continous parameters into discrete states
-        (source: https://pages.cs.wisc.edu/~finton/qcontroller.html)
+        Converts continous parameters into discrete states.
+        (adapted from: https://pages.cs.wisc.edu/~finton/qcontroller.html)
+        
+        Args:
+            theta (float): Angle error signal.
+            theta_dot (float): Angular velocity.
+
+        Returns:
+            int: Current state.
         '''
+        # Convert to degrees
         theta = np.rad2deg(theta)
         theta_dot = np.rad2deg(theta_dot)
-        box = 0
 
         # Failure state
         if theta < -60 or theta > 60:
             return self.fail_state
         
-        # angles
+        # Angles
         if (theta < -51): box = 0
         elif(theta < -46): box = 1
         elif (theta < -41): box = 2
@@ -55,7 +76,7 @@ class QLearningController:
         elif(theta < 51): box = 22
         else: box = 23
 
-        # angular velocities
+        # Angular velocities
         if (theta_dot < -50): pass
         elif (theta_dot < -25): box += 24
         elif (theta_dot < 0): box += 48
@@ -67,15 +88,27 @@ class QLearningController:
 
     def select_action(self, state):
         '''
-        Selects next action using purely greedy strategy,
-        returning the index of the action i.e. 0 or 1
+        Selects the next action using an exclusively greedy strategy.
+
+        Args:
+            state (int): The current state.
+
+        Returns:
+            int: Index of action taken.
         '''
         return np.argmax(self.qtable[state, :]) 
 
     def get_force(self, theta, theta_dot):
         '''
-        Applies QLearning algorithm to select an action
-        and then apply a force to the cart
+        Carries out the steps required to get an output: gets the current state
+        and then selects and returns an action accordingly.
+
+        Args:
+            theta (float): Angle error signal.
+            theta_dot (float): Angular velocity.
+
+        Returns
+            float: Output signal (force).
         '''
         state = self.get_state(theta, theta_dot)
         action = self.select_action(state)
@@ -85,17 +118,26 @@ class QLearningController:
 
         return force
         
-# QLearning controller
+# Instantiate Q-Learning Controller
 controller = QLearningController()   
 
 def controller_call(rad_big, theta_dot):
     '''
-    Method that MATLAB calls for QLearning
+    Calls the Q-Learning Controller to compute the control signal.
+
+    Args:
+        theta (float): Angle error signal.
+        theta_dot (float): Angular velocity.
+
+    Returns:
+        float: Output signal (force).
     '''
     global controller
-    # Normalize the angle (between -pi and pi)
+
+    # Normalise the angle (between -π and π)
     theta = (rad_big%(np.sign(rad_big)*2*np.pi))
     if theta >= np.pi:
         theta -= 2 * np.pi
+        
     force = controller.get_force(theta, theta_dot)
     return force
