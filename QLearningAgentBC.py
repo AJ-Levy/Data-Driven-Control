@@ -1,46 +1,61 @@
 import numpy as np
 
 class QLearningAgent:
+    '''
+    A class that implements a Q-Learning Agent for a buck converter system.
+    
+    Attributes:
+        qfile (str): Name of file where the Q-Table is stored.
+        qtable (numpy.ndarray): The Agent's Q-Table.
+        total_episodes (int): Total number of episodes to be completed.
+        alpha (float): Learning rate.
+        gamma (float): Discount factor.
+        epsilon (float): Exploration rate.
+        min_epsilon (float): Minimum exploration rate.
+        epsilon_decay_val (float): Parameter which quantifies the rate at which epsilon decays.
+        episode_threshold (int): Episode at which epsilon decay starts.
+        last_action (int): Previous action taken.
+        last_state (int): Previous state occupied.
+        actions (list): Possible actions (duty cycles) that can be taken be the controller.
+        fail_state (int): An extremely undesireable state.
+        num_actions (int): Number of actions available.
+        num_states (int): Number of states available.
+    '''
 
-    def __init__(self, num_actions=5):
-        # files
+    def __init__(self):
+        '''
+        Initialises the Q-Learning Agent for training.
+        '''
         self.qfile = 'qtable_BC.npy'
-        self.convergence_file = 'qconverge_BC.txt'
-        # number of episodes
-        self.total_episodes =1250
-        # learning rate
+        self.qtable = np.load(self.qfile)
+
+        self.total_episodes = 1250
+
         self.alpha = 0.01
-        # discount factor
         self.gamma = 0.995
-        # epsilon-greedy
+
         self.epsilon = 1.0
         self.min_epsilon = 0.05
         self.epsilon_decay_val = 0.995
         self.episode_threshold = self.total_episodes//10
-        # defining q-table
-        self.qtable = np.load(self.qfile)
-        # last state and action
+
         self.last_state = None
         self.last_action = None
         self.actions = [0.1, 0.3, 0.5, 0.7, 0.9]
-        # state parameters
-        self.fail_state = -1
-        self.num_actions = num_actions
-        self.num_states =  24 # 0 - 71
-        # track convergence by cumulative reward
-        self.cum_reward = 0
-        self.cum_rewards = []
-        self.current_episode = 1
-        # count number of iterations
-        self.time_steps = 0
-        # total time steps
-        self.dt = 5e-6
-        self.total_time = 0.3
-        self.total_steps = self.total_time/self.dt
 
+        self.fail_state = -1
+        self.num_actions = len(self.actions)
+        self.num_states =  24 # 0 - 23
+ 
     def get_state(self, voltage):
         '''
-        Convert continous parameters into discrete states
+        Converts continous parameters into discrete states.
+
+        Args:
+            voltage (float): Voltage error signal.
+
+        Returns:
+            int: Current state.
         '''
         if (voltage < -100 or voltage > 100):
             return self.fail_state
@@ -76,8 +91,14 @@ class QLearningAgent:
 
     def select_action(self, state, num_episodes):
         '''
-        Selects next action using epsilon greedy strategy,
-        returning the index of the action i.e. 0 or 1.
+        Selects the next action using an epsilon greedy strategy with epsilon decay.
+
+        Args:
+            state (int): The current state.
+            num_episodes (int): The current episode number.
+
+        Returns:
+            int: Index of action taken.
         '''
         if self.epsilon > self.min_epsilon and num_episodes > self.episode_threshold:
             self.decay_epsilon(num_episodes)
@@ -89,49 +110,69 @@ class QLearningAgent:
         
     def decay_epsilon(self, num_episodes):
         '''
-        Epsilon decay is employed after some number of episodes
-        to allow both exploration and optimisation.
+        The value of epsilon decays after an epsiode threshold is reached.
+
+        Args: 
+            num_episodes (int): The current episode number.
         '''
         self.epsilon = np.power(self.epsilon_decay_val, num_episodes - self.episode_threshold)
 
+    def reward_function(self, voltage, ref_voltage):
+        '''
+        Calculates a reward to be distributed based on key state variables.
+        Two reward functions are provided, the uncommented one is the best-performing.
+
+        Args:
+            voltage (float): Voltage error signal.
+            ref_voltage (float): Desired/reference voltage. 
+
+        Returns:
+            float: The reward due.
+        '''
+        # First reward function
+        return 1/(1 + (voltage)**2)
+        
+        '''
+        # Second (worse-performing) reward function
+        v_out = abs(voltage - ref_voltage)
+        if (v_out >= 3/4 * ref_voltage) and (v_out <= 5/4 * ref_voltage):
+            return (abs(ref_voltage/4) - abs(voltage))**2
+        return 0
+        '''
     
     def update(self, state, action, reward, next_state, num_episodes):
         '''
-        Implementation of QLearning governing equation
+        Implementation of the Q-Learning equation, which also saves the
+        final Q-Table at the end of the last episode.
+
+        Args:
+            state (int): The current state.
+            action (int): The current action.
+            reward (float): The reward due based on the reward function.
+            next_state (int): The next state.
+            num_episodes (int): The current episode number.
         '''
         q_old = self.qtable[state, action]
         q_new = reward + self.gamma * np.max(self.qtable[next_state])
         self.qtable[state, action] = q_old + self.alpha * (q_new - q_old)
-        
-        # collect convergence data
-        rew = 0
-        if state > 8 and state < 14:
-            rew = 1.0
 
-        if self.current_episode == num_episodes:
-            self.cum_reward += rew
-        else:
-            self.cum_rewards.append(self.cum_reward)
-            self.cum_reward = rew
-            self.current_episode += 1
-            self.time_steps = 0
-
-        # save updated qtable and convergence data
+        # Save updated Q-Table
         if num_episodes == self.total_episodes:
             np.save(self.qfile, self.qtable)
-            
-            with open(self.convergence_file, "w") as f:
-                for i, reward in enumerate(self.cum_rewards):
-                    f.write(f'{i}#{reward}\n')
-
 
     def get_output(self, voltage, ref_voltage, num_episodes):
         '''
-        Applies QLearning algorithm to select an action
-        and then return an appropriate output signal
-        '''
-        self.time_steps += 1
+        Carries out the steps required to get an output: gets the current state,
+        caclulates a reward, updates the Q-Table, selects and returns a new action appropriately.
 
+        Args:
+            voltage (float): Voltage error signal.
+            ref_voltage (float): Desired/reference voltage. 
+            num_episodes (float): The current episode number.
+
+        Returns
+            float: Output signal (duty cycle).
+        '''
         state = self.get_state(voltage)
         if self.last_state is not None:
             reward = self.reward_function(voltage, ref_voltage)
@@ -141,32 +182,22 @@ class QLearningAgent:
         self.last_action = action
         duty_cycle = self.actions[action]
 
-        return duty_cycle
+        return duty_cycle    
         
-    def reward_function(self, voltage, ref_voltage):
-        '''
-        simple for now
-        '''
-        
-        
-        # First Reward Function
-        return 1/(1 + (voltage)**2)
-        
-        '''
-        # Second (worse-performing) Reward Function
-        v_out = abs(voltage - ref_voltage)
-        if (v_out >= 3/4 * ref_voltage) and (v_out <= 5/4 * ref_voltage):
-            return (abs(ref_voltage/4) - abs(voltage))**2
-        return 0
-        '''
-        
-        
-# QLearning agent
+# Instantiate QLearningAgent.
 agent = QLearningAgent()     
 
 def controller_call(voltage, ref_voltage, num_episodes):
     '''
-    Method that MATLAB calls for QLearning
+    Calls the Q-Learning Agent to compute the control signal.
+
+    Args:
+        voltage (float): Voltage error signal.
+        ref_voltage (float): Desired/reference voltage. 
+        num_episodes (float): The current episode number.
+
+    Returns:
+        float: Output signal (duty cycle).
     '''
     global agent
     output = agent.get_output(voltage, ref_voltage, num_episodes)

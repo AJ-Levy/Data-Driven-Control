@@ -1,50 +1,65 @@
 import numpy as np
 
 class QLearningAgent:
+    '''
+    A class that implements a Q-Learning Agent for an inverted pendulum system.
+    
+    Attributes:
+        qfile (str): Name of file where the Q-Table is stored.
+        qtable (numpy.ndarray): The Agent's Q-Table.
+        total_episodes (int): Total number of episodes to be completed.
+        alpha (float): Learning rate.
+        gamma (float): Discount factor.
+        epsilon (float): Exploration rate.
+        min_epsilon (float): Minimum exploration rate.
+        epsilon_decay_val (float): Parameter which quantifies the rate at which epsilon decays.
+        episode_threshold (int): Episode at which epsilon decay starts.
+        last_action (int): Previous action taken.
+        last_state (int): Previous state occupied.
+        forces (list): Possible actions (forces) that can be taken be the controller.
+        fail_state (int): An extremely undesireable state.
+        num_actions (int): Number of actions available.
+        num_states (int): Number of states available.
+    '''
 
-    def __init__(self, num_actions=4):
-        # files
+    def __init__(self):
         self.qfile = 'qtable.npy'
-        self.convergence_file = 'qconverge.txt'
-        # number of episodes
+        self.qtable = np.load(self.qfile)
+
         self.total_episodes = 1500
-        # learning rate
+
         self.alpha = 0.1
-        # discount factor
         self.gamma = 0.99
-        # epsilon-greedy
+
         self.epsilon = 1.0
         self.min_epsilon = 0.05
         self.epsilon_decay_val = 0.995
         self.episode_threshold = self.total_episodes//10
-        # defining q-table
-        self.qtable = np.load(self.qfile)
-        # last state and action
+        
         self.last_state = None
         self.last_action = None
-        # forces to be applied to cart
+  
         self.forces = [10.0, 30.0, -10.0, -30.0]
-        # state parameters
+
         self.fail_state = -1
-        self.num_actions = num_actions
-        self.num_states = 144 # 0 - 17
-        # track convergence by cumulative reward
-        self.cum_reward = 0
-        self.cum_rewards = []
-        self.current_episode = 1
-        # count number of iterations
-        self.time_steps = 0
+        self.num_actions = len(self.forces)
+        self.num_states = 144 # 0 - 143
 
     def get_state(self, theta, theta_dot):
         '''
-        Convert continous parameters into discrete states
-        (source: https://pages.cs.wisc.edu/~finton/qcontroller.html)
+        Converts continous parameters into discrete states.
+        (adapted from: https://pages.cs.wisc.edu/~finton/qcontroller.html)
+        
+        Args:
+            theta (float): Angle error signal.
+            theta_dot (float): Angular velocity.
+
+        Returns:
+            int: Current state.
         '''
         theta = np.rad2deg(theta)
         theta_dot = np.rad2deg(theta_dot)
-        box = 0
 
-        # Failure state
         if theta < -60 or theta > 60:
             return self.fail_state
         
@@ -87,8 +102,14 @@ class QLearningAgent:
 
     def select_action(self, state, num_episodes):
         '''
-        Selects next action using epsilon greedy strategy,
-        returning the index of the action i.e. 0 or 1.
+        Selects the next action using an epsilon greedy strategy with epsilon decay.
+
+        Args:
+            state (int): The current state.
+            num_episodes (int): The current episode number.
+
+        Returns:
+            int: Index of action taken.
         '''
         if self.epsilon > self.min_epsilon and num_episodes > self.episode_threshold:
             self.decay_epsilon(num_episodes)
@@ -100,49 +121,68 @@ class QLearningAgent:
         
     def decay_epsilon(self, num_episodes):
         '''
-        Epsilon decay is employed after some number of episodes
-        to allow both exploration and optimisation.
+        The value of epsilon decays after an epsiode threshold is reached.
+
+        Args: 
+            num_episodes (int): The current episode number.
         '''
         self.epsilon = np.power(self.epsilon_decay_val, num_episodes - self.episode_threshold)
+
+    def reward_function(self, theta, theta_dot, last_action):
+        '''
+        Calculates a reward to be distributed based on key state variables.
+        (adapted from: https://github.com/openai/gym/blob/master/gym/envs/classic_control/pendulum.py)
+
+        Args:
+            theta (float): Angle error signal.
+            theta_dot (float): Angular velocity.
+            last_action (int): Index of last action taken.
+
+        Returns:
+            float: The reward due.
+        '''
+        stabilisation_reward = 10 if np.linalg.norm([theta, theta_dot]) < 0.1 else 0
+        angle_penalty = theta**2 
+        ang_velocity_penalty = 0.1 * theta_dot**2 
+        action_penalty = 0.001 * self.forces[last_action]**2
+
+        return -(angle_penalty + ang_velocity_penalty + action_penalty) + stabilisation_reward
 
     
     def update(self, state, action, reward, next_state, num_episodes):
         '''
-        Implementation of QLearning governing equation
+        Implementation of the Q-Learning equation, which also saves the
+        final Q-Table at the end of the last episode.
+
+        Args:
+            state (int): The current state.
+            action (int): The current action.
+            reward (float): The reward due based on the reward function.
+            next_state (int): The next state.
+            num_episodes (int): The current episode number.
         '''
         q_old = self.qtable[state, action]
         q_new = reward + self.gamma * np.max(self.qtable[next_state])
         self.qtable[state, action] = q_old + self.alpha * (q_new - q_old)
-        
-        # collect convergence data
-        rew = 0.0
-        if state != self.fail_state:
-            rew = 1.0
 
-        if self.current_episode == num_episodes:
-            self.cum_reward += rew
-        else:
-            self.cum_rewards.append(self.cum_reward)
-            self.cum_reward = rew
-            self.current_episode += 1
-            self.time_steps = 0
-
-        # save updated qtable and convergence data
+        # Save updated Q-Table
         if num_episodes == self.total_episodes:
             np.save(self.qfile, self.qtable)
-            
-            with open(self.convergence_file, "w") as f:
-                for i, reward in enumerate(self.cum_rewards):
-                    f.write(f'{i}#{reward}\n')
 
 
     def get_force(self, theta, theta_dot, num_episodes):
         '''
-        Applies QLearning algorithm to select an action
-        and then apply a force to the cart
-        '''
-        self.time_steps += 1
+        Carries out the steps required to get an output: gets the current state,
+        caclulates a reward, updates the Q-Table, selects and returns a new action appropriately.
 
+        Args:
+            theta (float): Angle error signal.
+            theta_dot (float): Angular velocity.
+            num_episodes (float): The current episode number.
+
+        Returns
+            float: Output signal (force).
+        '''
         state = self.get_state(theta, theta_dot)
         if self.last_state is not None:
             reward = self.reward_function(theta, theta_dot, self.last_action)
@@ -153,35 +193,28 @@ class QLearningAgent:
         force = self.forces[action] 
 
         return force
-        
-    def reward_function(self, theta, theta_dot, last_action):
-        '''
-        if state == self.fail_state:
-            return 0.0
-        return 1.0
-
-        (source: https://github.com/openai/gym/blob/master/gym/envs/classic_control/pendulum.py)
-        '''
-        
-        stabilisation_reward = 10 if np.linalg.norm([theta, theta_dot]) < 0.1 else 0
-        angle_penalty = theta**2 
-        ang_velocity_penalty = 0.1 * theta_dot**2 
-        action_penalty = 0.001 * self.forces[last_action]**2
-
-        return -(angle_penalty + ang_velocity_penalty + action_penalty) + stabilisation_reward
-        
-        
-# QLearning agent
+           
+# Instantiate Q-Learning Agent.
 agent = QLearningAgent()     
 
 def controller_call(rad_big, theta_dot, num_episodes):
     '''
-    Method that MATLAB calls for QLearning
+    Calls the Q-Learning Agent to compute the control signal.
+
+    Args:
+        rad_big (float): Raw angle error signal.
+        theta_dot (float): Angular velocity.
+        num_episodes (float): The current episode number.
+
+    Returns:
+        float: Output signal (force).
     '''
     global agent
-    # Normalize the angle (between -pi and pi)
+
+    # Normalize the angle (between -π and π)
     theta = (rad_big%(np.sign(rad_big)*2*np.pi))
     if theta >= np.pi:
         theta -= 2 * np.pi
+
     force = agent.get_force(theta, theta_dot, num_episodes)
     return force
