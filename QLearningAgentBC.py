@@ -60,7 +60,7 @@ class QLearningAgent:
         if (voltage < -100 or voltage > 100):
             return self.fail_state
         
-        # voltages
+        # Voltages
         if voltage < -60: box = 0
         elif voltage < -40: box = 1
         elif voltage < -30: box = 2

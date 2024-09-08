@@ -23,6 +23,9 @@ class QLearningAgent:
     '''
 
     def __init__(self):
+        '''
+        Initialises the Q-Learning Agent for training.
+        '''
         self.qfile = 'qtable.npy'
         self.qtable = np.load(self.qfile)
 
@@ -57,13 +60,14 @@ class QLearningAgent:
         Returns:
             int: Current state.
         '''
+        # Convert to degrees
         theta = np.rad2deg(theta)
         theta_dot = np.rad2deg(theta_dot)
 
         if theta < -60 or theta > 60:
             return self.fail_state
         
-        # angles
+        # Angles
         if (theta < -51): box = 0
         elif(theta < -46): box = 1
         elif (theta < -41): box = 2
@@ -89,7 +93,7 @@ class QLearningAgent:
         elif(theta < 51): box = 22
         else: box = 23
 
-        # angular velocities
+        # Angular velocities
         if (theta_dot < -50): pass
         elif (theta_dot < -25): box += 24
         elif (theta_dot < 0): box += 48
@@ -211,7 +215,7 @@ def controller_call(rad_big, theta_dot, num_episodes):
     '''
     global agent
 
-    # Normalize the angle (between -π and π)
+    # Normalise the angle (between -π and π)
     theta = (rad_big%(np.sign(rad_big)*2*np.pi))
     if theta >= np.pi:
         theta -= 2 * np.pi

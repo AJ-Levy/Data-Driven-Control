@@ -1,29 +1,48 @@
 import numpy as np
 
 class QLearningController:
+    '''
+    A class that implements a (trained) Q-Learning Controller for a buck converter system.
+    
+    Attributes:
+        qfile (str): Name of file where the Q-Table is stored.
+        qtable (numpy.ndarray): The Agent's Q-Table.
+        last_action (int): Previous action taken.
+        actions (list): Possible actions (duty cycles) that can be taken be the controller.
+        fail_state (int): An extremely undesireable state.
+        num_actions (int): Number of actions available.
+        num_states (int): Number of states available.
+    '''
 
-    def __init__(self, num_actions=5):
-        # qtable file
+    def __init__(self):
+        '''
+        Initialises the Q-Learning Controller for use.
+        '''
         self.qfile = 'qtable_BC.npy'
-        # defining q-table
         self.qtable = np.load(self.qfile)
-        # last state and action
+
         self.last_action = None
-        # actions to be applied (duty cycle adjustments)
+       
         self.actions = [0.1, 0.3, 0.5, 0.7, 0.9]
-        # state parameters
-        self.num_actions = num_actions
-        self.num_states = 24 # 0 - 71
+
         self.fail_state = -1
+        self.num_actions = len(self.actions)
+        self.num_states = 24 # 0 - 23
 
     def get_state(self, voltage):
         '''
-        Convert continous parameters into discrete states
+        Converts continous parameters into discrete states.
+
+        Args:
+            voltage (float): Voltage error signal.
+
+        Returns:
+            int: Current state.
         '''
         if (voltage < -100 or voltage > 100):
             return self.fail_state
         
-        # voltages
+        # Voltages
         if voltage < -60: box = 0
         elif voltage < -40: box = 1
         elif voltage < -30: box = 2
@@ -53,15 +72,26 @@ class QLearningController:
     
     def select_action(self, state):
         '''
-        Selects next action using purely greedy strategy,
-        returning the index of the action i.e. 0 or 1
+        Selects the next action using an exclusively greedy strategy.
+
+        Args:
+            state (int): The current state.
+
+        Returns:
+            int: Index of action taken.
         '''
         return np.argmax(self.qtable[state, :]) 
 
     def get_output(self, voltage):
         '''
-        Applies QLearning algorithm to select an action
-        and then apply a force to the cart
+        Carries out the steps required to get an output: gets the current state
+        and then selects and returns an action accordingly.
+
+        Args:
+            voltage (float): Voltage error signal.
+
+        Returns
+            float: Output signal (duty cycle).
         '''
         state = self.get_state(voltage)
         action = self.select_action(state)
@@ -70,12 +100,18 @@ class QLearningController:
         duty_cycle = self.actions[action]
         return duty_cycle
         
-# QLearning controller
+# Instantiate Q-Learning Controller
 controller = QLearningController()   
 
 def controller_call(voltage):
     '''
-    Method that MATLAB calls for QLearning
+    Calls the Q-Learning Controller to compute the control signal.
+
+    Args:
+        voltage (float): Voltage error signal.
+
+    Returns:
+        float: Output signal (duty cycle).
     '''
     global controller
 
