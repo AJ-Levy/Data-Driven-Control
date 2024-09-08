@@ -5,7 +5,6 @@ A brief description of what the project does and its purpose. This project aims 
 ## Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
-- [Results](#results)
 - [Acknowledgements](#acknowledgements)
 
 ## Installation
@@ -35,10 +34,6 @@ A brief description of what the project does and its purpose. This project aims 
 ## Usage
 
 Which files do what and how to run them .
-
-## Results
-
-Summary of project results?
 
 ## Acknowledgements
 
