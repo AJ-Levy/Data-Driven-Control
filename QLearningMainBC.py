@@ -1,8 +1,23 @@
 import matlab.engine
 import matplotlib.pyplot as plt
-import os
 import numpy as np
 import time
+import sys
+
+def updateProgressBar(episode_num, total_episodes, progress_width=25):
+    '''
+    Displays a text-based loading bar in the terminal.
+
+    Args:
+        episode_num (int): Current episode number.
+        total (int): Total number of episodes.
+        progress_width (int): The length of the loading bar in characters.
+    '''
+    progress = int(episode_num / total_episodes * progress_width)
+    percentage = min((episode_num / total_episodes)*100, 100)
+    
+    sys.stdout.write("\r[{}{}] {}/{} episodes ({:.1f}%)".format("=" * progress, "-" * (progress_width - progress), episode_num, total_episodes, percentage))
+    sys.stdout.flush()
 
 def viewTable(qtable_file='qtable_BC.npy'):
     ''' 
@@ -65,9 +80,8 @@ def train(eng, model, source_voltage, v_ref, total_episodes=1250, count=0):
 
         # Simulating episodes
         eng.sim(model)
-        if episode % (total_episodes//10) == 0:
-            count += 1 
-            print(f"{count*10}%")
+        count += 1
+        updateProgressBar(count, total_episodes)
 
 def setNoise(eng, model, noise):
     '''
