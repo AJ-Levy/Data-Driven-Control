@@ -11,6 +11,7 @@ def viewTable(qtable_file='qtable.npy'):
         qtable_file (str): Name of file where the Q-Table is stored.
     '''
     qtable = np.load(qtable_file)
+    np.set_printoptions(precision=1, suppress=True)
     print(qtable)
 
 # reset Q table
@@ -124,7 +125,7 @@ def main(trainModel = True,
     eng.eval(f"out = sim('{controllerModel}');", nargout=0)
     
     # Showing Q-Table and starting angle
-    print("Final Q-Table")
+    print("Final Q-Table:")
     viewTable()
     print(f"Initial Angle: {initial_angle:.2f} radians")
 
