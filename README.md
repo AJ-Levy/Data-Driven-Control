@@ -10,16 +10,24 @@ A brief description of what the project does and its purpose. This project aims 
 
 ## Installation
 
-1. Clone the repository:
+1. Ensure that MATLAB is installed on your system. It can be downloaded from [MathWorks](https://www.mathworks.com/products/matlab.html).
+
+2. Clone the repository:
     ```bash
    git clone https://github.com/AJ-Levy/Data-Driven-Control.git
-    
     ```
-3. Navigate to the project directory:
+
+3. Place this directory within the MATLAB directory:
+   ```bash
+   mv Data-Driven-Control MATLAB/
+   ```
+   
+4. Navigate to the project directory:
     ```bash
-    cd Data-Driven-Control
+    cd MATLAB/Data-Driven-Control
     ```
-4. Install the necessary dependencies:
+    
+5. Install the necessary dependencies:
     ```bash
     pip install -r requirements.txt
     ```
