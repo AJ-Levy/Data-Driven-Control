@@ -7,6 +7,7 @@ This project compares the performance of data-driven control methods, Q-Learning
 *University of Cape Town* <br>
 *FLSMAT002@myuct.ac.za* 
 <br>
+
 **Ariel J. Levy**<br>
 *University of Cape Town* <br>
 *LVYARI002@myuct.ac.za*
