@@ -82,14 +82,14 @@ To modify the parameters of a specific control method, follow these instructions
 
 - PID
 
-    Go to the appropriate `PIDController `file and adjust the values of `Kp`, `Ki`, and `Kd` in this line of code:
+    Go to the appropriate `PIDController` file and change the values of `Kp`, `Ki`, and `Kd` in this line of code:
     ```python
     pid_controller = PIDController(Kp=x, Ki=y, Kd=z)
     ```
 
 - Q-Learning
 
-    Go to the appropriate `QLearningAgent` file and adjust the values of `alpha` and `gamma` in this line of code.
+    Go to the appropriate `QLearningAgent` file and change the values of `alpha` and `gamma` in this line of code.
     ```python
     agent = QLearningAgent(alpha=s, gamma=t) 
     ```
