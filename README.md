@@ -52,7 +52,7 @@ ___
 
 To run the simulations for each control method on the respective systems, follow these steps:
 
-### 1. Ensure all dependencies are installed. 
+### 1. Ensure All Dependencies Are Installed
 Make sure the necessary Python packages are installed as per the installation instructions.
 
 ### 2. Running Simulations
