@@ -22,17 +22,21 @@ class QLearningAgent:
         num_states (int): Number of states available.
     '''
 
-    def __init__(self):
+    def __init__(self, alpha, gamma):
         '''
         Initialises the Q-Learning Agent for training.
+
+        Args:
+            alpha (float): Learning rate.
+            gamma (float): Discount factor.
         '''
         self.qfile = 'qtable.npy'
         self.qtable = np.load(self.qfile)
 
         self.total_episodes = 1500
 
-        self.alpha = 0.1
-        self.gamma = 0.99
+        self.alpha = alpha
+        self.gamma = gamma
 
         self.epsilon = 1.0
         self.min_epsilon = 0.05
@@ -199,7 +203,7 @@ class QLearningAgent:
         return force
            
 # Instantiate Q-Learning Agent.
-agent = QLearningAgent()     
+agent = QLearningAgent(alpha=0.1, gamma=0.99)     
 
 def controller_call(rad_big, theta_dot, num_episodes):
     '''

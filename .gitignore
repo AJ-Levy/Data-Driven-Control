@@ -4,7 +4,6 @@ slprj/
 *.npy
 *.autosave
 *.pkl
-test.py
+
 *.pdf
-plotting.py
 .DS_Store
