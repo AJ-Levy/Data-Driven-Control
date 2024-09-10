@@ -20,29 +20,31 @@ ___
 
 ## Installation
 
-1. Ensure that MATLAB is installed on your system. It can be downloaded from [MathWorks](https://www.mathworks.com/products/matlab.html).
+1. Ensure that you are using Python Version 3.9, 3.10, or 3.11. For Windows users, Python must be installed via the Python website, not the Microsoft store.
 
-2. Clone this repository:
+2. Install MATLAB on your system. It can be downloaded from [MathWorks](https://www.mathworks.com/products/matlab.html).
+
+3. Clone this repository:
     ```bash
    git clone https://github.com/AJ-Levy/Data-Driven-Control.git
     ```
 
-3. Place this directory within the MATLAB directory:
+4. Place this directory within the MATLAB directory:
    ```bash
    mv Data-Driven-Control MATLAB/
    ```
    
-4. Navigate to the project directory:
+5. Navigate to the project directory:
     ```bash
     cd MATLAB/Data-Driven-Control
     ```
     
-5. Install the necessary dependencies:
+6. Install the necessary dependencies:
     ```bash
     pip install -r requirements.txt
     ```
 
-6. Launch MATLAB and verify that the correct Python interpreter is being used with the following commands:
+7. Launch MATLAB and verify that the correct Python interpreter is being used with the following commands:
     ```MATLAB
     python_interpretor = '<path_to_python_version>';
     pyenv('Version', python_interpretor);
@@ -55,18 +57,24 @@ To run the simulations for each control method on the respective systems, follow
 ### 1. Ensure All Dependencies Are Installed
 Make sure the necessary Python packages are installed as per the installation instructions.
 
-### 2. Running Simulations
-Each control method for both the inverted pendulum and DC-DC buck converter systems has a main Python file. To execute the simulation, simply run the corresponding file for the desired system and control method:
+### 2. Choose the Desired Control Method and System
+Each control method has a main Python file for every system it was applied to. Below is a list of the main files corresponding to each system and method. 
 
  - Inverted Pendulum
 
     - PID: Run `PIDMainPend.py`
     - Q-Learning: Run `QLearningMainPend.py`
+    - NEAT: Run `NEATMainPend.py` 
 
-- DC-DC Buck Converter
+- Buck Converter
 
     - PID: Run `PIDMainBC.py`
     - Q-Learning: Run `QLearningMainBC.py`
+
+- Buck-Boost Converter
+
+    - PID: Run `PIDMainBBC.py`
+    - NEAT: Run `NEATMainBBC.py`
 
 ### 3. Execution
 Each main file is self-contained. Running the script will automatically start the simulation, displaying results like control method details and plots of system behaviour. 
