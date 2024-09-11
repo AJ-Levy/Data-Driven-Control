@@ -39,7 +39,8 @@ def main(noise = False,
 
     # Setting model parameters
     eng.set_param(f'{model}/{mask}', 'init', str(initial_angle), nargout=0)
-    
+    setNoise(eng, model, noise)
+
     print("Running simulation...")
     eng.eval(f"out = sim('{model}');", nargout=0)
     print("Simulation complete")
