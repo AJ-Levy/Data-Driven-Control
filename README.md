@@ -1,6 +1,6 @@
 # Data-Driven Control
 
-This project compares the performance of data-driven control methods, Q-Learning and NEAT, with one another as well as traditional PID control. The methods are applied to non-linear binary control systems, specifically the inverted pendulum and DC-DC buck converters.
+This project compares the performance of data-driven control methods, Q-Learning and NEAT, with one another, as well as traditional PID control. The methods are applied to non-linear binary control systems, specifically the inverted pendulum and DC-DC buck converters.
 
 ## Authors
 **Matthew Fleischman**<br>
@@ -20,7 +20,7 @@ ___
 
 ## Installation
 
-1. Ensure that you are using Python Version 3.9, 3.10, or 3.11. For Windows users, Python must be installed via the Python website, not the Microsoft store.
+1. Ensure that you are using Python version 3.9, 3.10, or 3.11. For Windows users, Python must be installed via the Python website, not the Microsoft store.
 
 2. Install MATLAB on your system. It can be downloaded from [MathWorks](https://www.mathworks.com/products/matlab.html).
 
@@ -58,7 +58,7 @@ To run the simulations for each control method on the respective systems, follow
 Make sure the necessary Python packages are installed as per the installation instructions.
 
 ### 2. Choose the Desired Control Method and System
-Each control method has a main Python file for every system it was applied to. Below is a list of the main files corresponding to each system and method. 
+Each control method has a main Python file for every system to which it was applied. Below is a list of the main files corresponding to each system and method. 
 
  - Inverted Pendulum
 
