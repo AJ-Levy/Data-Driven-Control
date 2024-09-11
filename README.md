@@ -79,6 +79,11 @@ Each control method has a main Python file for every system to which it was appl
 ### 3. Execution
 Each main file is self-contained. Running the script will automatically start the simulation, displaying results like control method details and plots of system behaviour. 
 
+First navigate to the correct directory: `PID`, `QLearning`, or `NEAT`, using the following command:
+```bash
+cd <control_method>
+```
+
 To execute a file, use the command line or your preferred Python environment:
 ```bash
 python <control_method>Main<system>.py
