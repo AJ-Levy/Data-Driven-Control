@@ -108,15 +108,16 @@ To modify the parameters of a specific control method, follow these instructions
     ```
 
 - NEAT
-    Go to the appropriate `Config` file and adjust the configuarion parameters of the NEAT population. It is advised to not          change the fitness criterion or number of hidden, input or output nodes. Note that NEAT uses custom activation functions for     the inverted pendulum.
+  
+    1. Go to the appropriate `Config` file and adjust the configuarion parameters of the NEAT population. It is advised to not          change the fitness criterion or number of hidden, input or output nodes. Note that NEAT uses custom activation functions         for the inverted pendulum.
 
-    To change the number of generations, go to the appropriate `NEATMain` file and change the last argument in this function.
-    ```python
-    pop.run(eval_genomes, 25)
-    ```
+    2. To change the number of generations, go to the appropriate `NEATMain` file and change the last argument in this function.
+       ```python
+       pop.run(eval_genomes, 25)
+       ```
 
-    In the context of the BBC, to change the desired voltage for the NEAT population that you are training, go to 
-    `NEATMainBBC` and adjust the `final_goal` variable in the `eval_genomes(genomes, config)` method. 
+    3. In the context of the BBC, to change the desired voltage for the NEAT population that you are training, go to 
+       `NEATMainBBC` and adjust the `final_goal` variable in the `eval_genomes(genomes, config)` method. 
 
 Adjust these parameters according to your needs to fine-tune the performance of the control methods.
 
