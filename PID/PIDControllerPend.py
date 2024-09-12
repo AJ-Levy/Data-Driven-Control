@@ -1,4 +1,4 @@
-class PIDController:
+class PIDControllerPend:
     '''
     A class that implements a simple Proportional-Integral-Derivative (PID) controller.
     
@@ -54,8 +54,8 @@ class PIDController:
 
         return output_force
 
-# Instantiate PIDController object.
-pid_controller = PIDController(Kp=44, Ki=80, Kd=6, dt=0.001)
+# Instantiate PIDControllerPend object.
+pid_controller = PIDControllerPend(Kp=44, Ki=80, Kd=6, dt=0.001)
 
 def controller_call(setpoint, measurement):
     '''
