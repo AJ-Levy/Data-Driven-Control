@@ -52,7 +52,7 @@ def main(noise = False,
         angle_lst.append(angle[0])
 
     # Get time
-    time_2d = eng.eval("out.time")
+    time_2d = eng.eval("out.tout")
     time_lst = []
     for time in time_2d:
         time_lst.append(time[0])
@@ -60,7 +60,7 @@ def main(noise = False,
     eng.quit()
 
     # Plotting acquired data
-    plt.plot(time_lst, angle_lst, label = f"{initial_angle} rad")
+    plt.plot(time_lst, angle_lst, label = f"{round(initial_angle,2)} init. angle")
     plt.axhline(y=stabilisation_precision, color='k', linestyle='--', label=f'{stabilisation_precision} rad')
     plt.axhline(y=-stabilisation_precision, color='k', linestyle='--', label=f'-{stabilisation_precision} rad')
     plt.xlabel("Time (s)")

@@ -28,19 +28,18 @@ class PIDControllerPend:
         self.integral_error = 0
         self.previous_error = 0
 
-    def update(self, setpoint, measurement):
+    def update(self, measurement):
         '''
         Computes the control output using the PID control equation.
 
         Args:
-            setpoint (float): Desired value.
             measurement (float): Current value.
 
         Returns:
             float: Output signal.
         '''
 
-        error = measurement - setpoint
+        error = measurement
 
         self.integral_error += error * self.dt
 
@@ -57,16 +56,15 @@ class PIDControllerPend:
 # Instantiate PIDControllerPend object.
 pid_controller = PIDControllerPend(Kp=44, Ki=80, Kd=6, dt=0.001)
 
-def controller_call(setpoint, measurement):
+def controller_call(measurement):
     '''
     Calls the PID controller to compute the control signal.
 
     Args:
-        setpoint (float): Desired value.
         measurement (float): Current value.
 
     Returns:
         float: Output signal.
     '''
-    force = pid_controller.update(setpoint, measurement)
+    force = pid_controller.update(measurement)
     return force
