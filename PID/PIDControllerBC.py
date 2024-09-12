@@ -1,7 +1,7 @@
 class PIDController:
     '''
     A class that implements a Proportional-Integral-Derivative (PID) controller
-    with saturation and anti-windup measures.
+    with saturation and anti-windup measures to the BC.
     
     Attributes:
         Kp (float): Proportional gain coefficient.
