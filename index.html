@@ -320,5 +320,24 @@
             });
         });
     </script>
+
+    <script>
+        function adjustPadding() {
+            var nav = document.querySelector('nav');
+            var navHeight = nav.offsetHeight;
+            document.body.style.paddingTop = (navHeight + 10) + 'px';
+
+            var sections = document.querySelectorAll('.section');
+            sections.forEach(function(section) {
+                section.style.scrollMarginTop = (navHeight + 20) + 'px';
+            });
+        }
+
+        // Run on page load
+        adjustPadding();
+
+        // Run on window resize
+        window.addEventListener('resize', adjustPadding);
+    </script>
 </body>
 </html>
