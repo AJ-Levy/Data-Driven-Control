@@ -1,5 +1,0 @@
-numpy
-matplotlib
-matlabengine
-neat-python
-dill
