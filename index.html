@@ -62,7 +62,7 @@
         .author:last-child {
             margin-top: 0.6em;
         }
-        .findings-column h4 {
+        h4 {
             font-size: 1.2em; 
             font-weight: bold; 
             color:  #2e3338;
@@ -149,11 +149,9 @@
             align-items: flex-start;
             justify-content: space-between;
         }
-
         .findings-column {
             width: 48%;
         }
-
         .findings-divider {
             width: 3px; 
             background-color: #81b5a8;
@@ -198,12 +196,72 @@
             list-style-type: none;
             margin-bottom: 10px;
         }
-        .findings-container {
-            display: flex;
-            justify-content: space-between;
+        .panel {
+            position: relative;
+            padding: 10px; 
+            border-radius: 10px;
+            background-color: #f6efdc; 
+            border: 2px solid rgba(129, 181, 168, 0.5); 
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+            overflow: hidden; 
         }
-        .findings-column {
-            width: 48%;
+        .pane {
+            display: none;
+            position: relative;
+        }
+        .pane.active {
+            display: block;
+        }
+        .pane-content {
+            padding: 5px; 
+            margin-left: 30px; 
+            margin-right: 30px; 
+        }
+        .arrow {
+            background-color: #f6efdc; 
+            border: none;
+            color: #164a4a; 
+            width: 25px; 
+            height: 100%; 
+            font-size: 1.5em;
+            cursor: pointer;
+            position: absolute;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .right-arrow {
+            right: 0;
+            border-top-right-radius: 10px; 
+            border-bottom-right-radius: 10px; 
+        }
+        .left-arrow {
+            left: 0;
+            border-top-left-radius: 10px; 
+            border-bottom-left-radius: 10px; 
+        }
+        .dots {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .dot {
+            height: 10px; 
+            width: 10px; 
+            margin: 0 3px;
+            background-color: lightgray; 
+            border-radius: 50%;
+            display: inline-block;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .dot.active {
+            background-color: #164a4a; 
+        }
+        .pane-content {
+            margin-left: 35px; 
+            margin-right: 35px; 
         }
     </style>
 </head>
@@ -251,18 +309,28 @@
             </ul>
 
             <h3><i class="fas fa-chart-line"></i> Findings</h3>
-            <div class="findings-container">
-                <div class="findings-column">
-                    <h4>Matt</h4>
-                    <h5 class="focus-heading">With a Focus on NEAT.</h5>
-                    <p>To evaluate the performance of data-driven methods, such as Q-Learning and NEAT, compared to traditional PID control in non-linear systems, in terms of stabilisation time, training time, robustness, and steady-state error</p>
+            <div id="findings-panel" class="panel">
+                <div class="pane active" id="pane1">
+                    <div class="pane-content">
+                        <h4>Matt</h4>
+                        <h5 class="focus-heading">With a Focus on NEAT.</h5>
+                        <p>To evaluate the performance of data-driven methods, such as Q-Learning and NEAT, compared to traditional PID control in non-linear systems...</p>
+                    </div>
+                    <button class="arrow right-arrow" onclick="showPane(2)">></button>
                 </div>
-                <div class="findings-divider"></div> 
-                <div class="findings-column">
-                    <h4>Ariel</h4>
-                    <h5 class="focus-heading">With a Focus on Q-Learning.</h5>
-                    <p>To evaluate the performance of data-driven methods, such as Q-Learning and NEAT, compared to traditional PID control in non-linear systems, in terms of stabilisation time, training time, robustness, and steady-state error</p>
+                <div class="pane" id="pane2">
+                    <button class="arrow left-arrow" onclick="showPane(1)"><</button>
+                    <div class="pane-content">
+                        <h4>Ariel</h4>
+                        <h5 class="focus-heading">With a Focus on Q-Learning.</h5>
+                        <p>To evaluate the performance of data-driven methods, such as Q-Learning and NEAT, compared to traditional PID control in non-linear systems...</p>
+                    </div>
                 </div>
+            </div>
+
+            <div class="dots">
+                <span class="dot active" onclick="showPane(1)"></span>
+                <span class="dot" onclick="showPane(2)"></span>
             </div>
         </section>
 
@@ -319,9 +387,22 @@
                 });
             });
         });
-    </script>
 
-    <script>
+        function showPane(paneNumber) {
+            const panes = document.querySelectorAll('.pane');
+            const dots = document.querySelectorAll('.dot');
+
+            panes.forEach((pane, index) => {
+                if (index === paneNumber - 1) {
+                    pane.classList.add('active');
+                    dots[index].classList.add('active');
+                } else {
+                    pane.classList.remove('active');
+                    dots[index].classList.remove('active');
+                }
+            });
+        }
+  
         function adjustPadding() {
             var nav = document.querySelector('nav');
             var navHeight = nav.offsetHeight;
