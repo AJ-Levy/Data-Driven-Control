@@ -312,18 +312,16 @@
             <div id="findings-panel" class="panel">
                 <div class="pane active" id="pane1">
                     <div class="pane-content">
-                        <h4>Matt</h4>
-                        <h5 class="focus-heading">With a Focus on NEAT.</h5>
-                        <p>To evaluate the performance of data-driven methods, such as Q-Learning and NEAT, compared to traditional PID control in non-linear systems...</p>
+                        <h4>Inverted Pendulum</h4>
+                        <p>All methods stabilised the inverted pendulum. NEAT produced the smallest mean stabilisation time. Q-learning produced overshoot.  Q-learning and NEAT provided more robustness than PID.</p>
                     </div>
                     <button class="arrow right-arrow" onclick="showPane(2)">></button>
                 </div>
                 <div class="pane" id="pane2">
                     <button class="arrow left-arrow" onclick="showPane(1)"><</button>
                     <div class="pane-content">
-                        <h4>Ariel</h4>
-                        <h5 class="focus-heading">With a Focus on Q-Learning.</h5>
-                        <p>To evaluate the performance of data-driven methods, such as Q-Learning and NEAT, compared to traditional PID control in non-linear systems...</p>
+                        <h4>Voltage Converters</h4>
+                        <p>Unlike NEAT and PID, Q-learning could not stabilise the buck-boost converter. However, Q-learning was able to stabilise a buck converter. Of the three methods, Q-learning produced the shortest stabilisation time, and NEAT produced the least overshoot. NEAT lacked robustness in handling different voltage conversions.</p>
                     </div>
                 </div>
             </div>
@@ -332,6 +330,16 @@
                 <span class="dot active" onclick="showPane(1)"></span>
                 <span class="dot" onclick="showPane(2)"></span>
             </div>
+
+            <h3><i class="fas fa-clipboard-check"></i> Conclusions</h3>
+            <ul>
+                <li><strong>1.</strong> Once optimised, data-driven methods <strong>generally outperform</strong> traditional PID control.</li>
+                <li><strong>2.</strong> Long <strong>training times</strong> are a <strong>limitation</strong> of data-driven methods.</li>
+                <li><strong>3.</strong> Data-driven methods are <strong>more robust</strong> than PID control when handling observational noise.</li>
+                <li><strong>4.</strong> The effectiveness of data-driven methods largely depends complexity of the <strong>system's state space</strong>, which is determined by external factors like gravity.</li>
+                <li><strong>5.</strong> The performances of data-driven methods are <strong>sensitive to the reward functions</strong> used. The highest performing reward functions provide an exponentially high reward for minimising system error.</li>
+            </ul>
+        
         </section>
 
         <section id="documentation" class="section">
